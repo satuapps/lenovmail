@@ -186,6 +186,72 @@ overridden by the caller.
 The endpoint is stateless Streamable HTTP (`mcp/server.py:build_mcp_app`), so no
 session affinity or reconnect handling is required on the client side.
 
+## Agents on another machine
+
+Nothing in the token path is tied to the local machine: authentication is the
+`Authorization` header, the MCP transport is stateless, and no route reads the client
+address. An agent on a second computer works as soon as it can reach the API host and
+that host is in the allowlist.
+
+The allowlist is the part that bites first. `TrustedHostMiddleware` compares the request's
+`Host` header against `LENOVMAIL_ALLOWED_HOSTS` (`api/app.py`), whose default covers only
+`localhost` and `127.0.0.1`, so a call to the machine's LAN address is rejected with
+`400 Invalid host header` before any route runs — including `/api/mcp`. Add the address the
+agent will dial, then recreate both services, since the value is read at process start:
+
+```bash
+echo 'LENOVMAIL_ALLOWED_HOSTS=localhost,127.0.0.1,localhost:8080,127.0.0.1:8080,192.168.1.78:8080' >> .env
+docker compose up -d --force-recreate api worker
+```
+
+Point the client at the same address:
+
+```json
+{
+  "mcpServers": {
+    "lenovmail": {
+      "type": "http",
+      "url": "http://192.168.1.78:8080/api/mcp",
+      "headers": { "Authorization": "Bearer lnv_..." }
+    }
+  }
+}
+```
+
+### Choosing the transport
+
+| Reach | Setup | What it costs |
+|---|---|---|
+| Same LAN | Allowlist the host's LAN address, as above. | The bearer token crosses the network in cleartext; anyone on that LAN who captures it holds full token access. |
+| Private overlay network (Tailscale, WireGuard) | Allowlist the overlay address instead. | Nothing is published to the internet, and the token only travels inside the tunnel. |
+| Public hostname | TLS-terminating proxy, `LENOVMAIL_ALLOWED_HOSTS=mail.example.com`, `LENOVMAIL_PUBLIC_BASE_URL=https://mail.example.com` — see [deployment.md](deployment.md#reverse-proxy-and-tls). | A public attack surface. Keep token lifetimes short and watch `agent_audit`. |
+
+Plain HTTP is only defensible on a network you control. A token is a bearer credential:
+`agent_tokens` has no address column, so a copied token works from anywhere until it is
+revoked or expires.
+
+### Scoping a remote token
+
+Give a remote agent the narrowest token that still does its job, because it is the only
+per-agent limit that exists:
+
+- `scopes` — `mail.read` alone for an agent that only summarises mail.
+- `account_ids` — restrict it to specific mailboxes. Only `POST /api/agent/tokens` and the
+  GUI set this; the CLI always issues an unrestricted token.
+- `require_send_approval` — leave it on, so an agent send stops at `pending_approval` in the
+  Outbox until a human approves it.
+- `send_limit_per_hour` and `expires_in_days` — cap the blast radius of a leaked token.
+
+Every call the token makes is recorded in `agent_audit` with its method and path, so the
+Agent Tokens page shows what a remote agent actually did. Revoke with
+`DELETE /api/agent/tokens/{token_id}`; the janitor deletes the row once
+`LENOVMAIL_JANITOR_TOKEN_RETENTION_DAYS` has passed.
+
+Browser-based agents are the one case this does not cover: CORS allows only the Vite dev
+origins `http://localhost:5173` and `http://127.0.0.1:5173` (`DEV_ORIGINS` in `api/app.py`),
+so a page served from any other origin cannot call the API from the browser. Agents that run
+as a process, which is how MCP clients run, are unaffected.
+
 ## End-to-end example
 
 An agent with `mail.read` + `mail.send` (and `require_send_approval=true`) searches an

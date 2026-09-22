@@ -117,7 +117,8 @@ Sends queued by an agent wait in the Outbox until a human approves them:
 
 ![Outbox with a pending approval](docs/images/outbox.png)
 
-Details: [docs/agents.md](docs/agents.md).
+Running the agent on another machine takes one allowlist entry and a token:
+[docs/agents.md](docs/agents.md#agents-on-another-machine).
 
 ## Maintenance built in
 
