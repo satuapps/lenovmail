@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Pooled IMAP connections must be checked before they are handed out again.
 
 Mail servers close idle connections without warning. The pool used to return them as-is, so

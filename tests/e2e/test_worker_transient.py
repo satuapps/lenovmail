@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """The transient-failure path in `sync_account` must not crash the job, and must not
 masquerade as success.
 

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Result types for mail configuration auto-detection."""
 
 from __future__ import annotations

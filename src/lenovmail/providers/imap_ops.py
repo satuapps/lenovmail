@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """High-level operations on top of `ImapConn` (folders, headers, body, flags, move, append)."""
 
 from __future__ import annotations

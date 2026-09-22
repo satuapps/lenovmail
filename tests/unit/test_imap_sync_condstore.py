@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Sync path decision tests: CONDSTORE vs fallback, UIDVALIDITY, and new UIDs.
 
 The test server (GreenMail) does not advertise CONDSTORE, so the CONDSTORE branch is

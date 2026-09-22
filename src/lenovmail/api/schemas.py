@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """API request/response schemas. The JSON shape is intentionally stable since it's used
 by both the GUI and agents.
 """

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Encryption for stored credentials: AES-256-GCM with an AAD binding row+column.
 
 Ciphertext format: `b"\\x01" + nonce(12 bytes) + ciphertext+tag`.

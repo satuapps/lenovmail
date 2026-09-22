@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // MailPage left sidebar: account picker + folder list for the selected account.
 import type { Account, Folder } from "../../types";
 import { accountStatusChipClass, folderIcon, folderLabel, syncStateDotClass } from "./mailUtils";

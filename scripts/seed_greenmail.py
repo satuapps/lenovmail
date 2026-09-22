@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Seed the test IMAP server with synthetic messages (used for at-scale verification).
 
 Example:

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """MCP server: mail-management tools for AI agents.
 
 Transport: Streamable HTTP, mounted on the API at `/api/mcp` and authenticated with the same

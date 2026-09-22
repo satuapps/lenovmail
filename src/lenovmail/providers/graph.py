@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Microsoft Graph client: MSAL auth, retries, and the mail operations used by sync/sender.
 
 The MSAL token cache is stored encrypted in `graph_settings.token_cache_enc` (AAD

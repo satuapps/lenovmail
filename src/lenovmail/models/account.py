@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Mail account model: `accounts` + per-provider settings (`imap_settings`, `graph_settings`)."""
 
 from __future__ import annotations

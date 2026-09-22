@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Bridge between `accounts`/`imap_settings` rows and the provider connectors.
 
 Shared by the sync engine, idler, API, and mail sender so that credential decryption

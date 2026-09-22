@@ -161,4 +161,4 @@ recorded in `agent_audit` with `tool` set to the literal method and path, e.g.
 the route itself checks a scope.
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

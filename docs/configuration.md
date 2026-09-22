@@ -134,4 +134,4 @@ LENOVMAIL_MS_CLIENT_SECRET=<azure-app-client-secret>
 ```
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

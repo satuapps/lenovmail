@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";

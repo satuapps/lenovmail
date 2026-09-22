@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Lenovmail operational commands: bootstrap, config discovery, manual sync, serve.
 
 Used for things that don't have a place in the GUI: creating the first user, checking

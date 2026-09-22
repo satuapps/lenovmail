@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Types mirrored from `src/lenovmail/api/schemas.py`. Don't add ad-hoc types in
 // features: if the backend changes, change it here so every usage is caught.
 export type UUID = string;

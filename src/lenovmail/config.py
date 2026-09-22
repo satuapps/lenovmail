@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Application configuration (pydantic-settings, env prefix `LENOVMAIL_`)."""
 
 from __future__ import annotations

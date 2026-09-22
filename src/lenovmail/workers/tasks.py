@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """arq jobs: account sync (IMAP + Graph), body backfill, and IMAP IDLE monitoring.
 
 `sync_account` runs one full cycle (header pass over all folders + body backfill) for

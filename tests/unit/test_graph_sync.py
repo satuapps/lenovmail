@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Microsoft Graph path tests: folder/message delta, deletion, and body fallback.
 
 An M365 tenant is not available in the test environment, so `GraphClient` is replaced

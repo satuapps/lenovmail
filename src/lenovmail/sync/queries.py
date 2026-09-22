@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Message read query shared by the REST API and MCP server.
 
 Filter rules (folder, status, full-text search, keyset cursor) must be identical for

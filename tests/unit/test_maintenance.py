@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Janitor decisions: quarantine, recovery, retirement, and token purging.
 
 The risky part of this module is not the SQL, it is the classification. A transient outage

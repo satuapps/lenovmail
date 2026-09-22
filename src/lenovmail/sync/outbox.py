@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Outbound email queue: build MIME, store `outbox` rows, and send per account.
 
 Accounts with `provider='imap'` are sent via `providers.smtp` then (optionally) copied to

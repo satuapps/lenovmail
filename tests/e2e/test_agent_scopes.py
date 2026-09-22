@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """An agent token may only read mail when it holds `mail.read`.
 
 The REST read routes used to check ownership alone, so a token created for sending only —

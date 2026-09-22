@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """FastAPI application: lifespan, middleware, GUI serving, and error handling.
 
 The built GUI (`web/dist`) is served by the same process so the session cookie stays

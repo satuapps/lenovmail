@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """All ORM models. Import this module so `Base.metadata` is complete (Alembic & runtime)."""
 
 from .account import Account, GraphSettings, ImapSettings

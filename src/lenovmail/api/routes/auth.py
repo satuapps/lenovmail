@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Browser session login: argon2, HttpOnly cookie, and failed-attempt rate limiting."""
 
 from __future__ import annotations

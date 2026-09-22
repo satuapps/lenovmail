@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """AI agent tokens: scoped creation, listing, revocation, and auditing.
 
 The token is shown only once, at creation time; what's stored in the database is its

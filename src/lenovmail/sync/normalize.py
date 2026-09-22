@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Normalize raw MIME into a message record ready for storage.
 
 Input is always the full MIME bytes (from IMAP `BODY.PEEK[]` or Graph `/$value`). The

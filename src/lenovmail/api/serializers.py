@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Data shaping for the API: folder counts, per-message flags, and page cursors.
 
 Every query here is scoped by account/ownership so no path can read another account's

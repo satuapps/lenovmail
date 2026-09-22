@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 import type {
   Account,
   AccountCreate,

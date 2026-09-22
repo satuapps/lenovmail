@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ServerEvent } from "./types";

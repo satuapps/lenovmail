@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """arq worker entry point: job registration, cron, and shared pool lifecycle.
 
 Run with: `uv run arq lenovmail.workers.main.WorkerSettings`

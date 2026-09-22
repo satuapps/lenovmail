@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Data hooks for the mail page. No react-query (not available in this project):
 // manual fetch + local state, sufficient for MailPage's three-panel needs.
 import { useCallback, useEffect, useRef, useState } from "react";

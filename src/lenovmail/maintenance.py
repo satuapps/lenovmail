@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Janitor for dead credentials and stale agent tokens.
 
 The sync path flags an account `auth_error` the moment a provider rejects the login, but

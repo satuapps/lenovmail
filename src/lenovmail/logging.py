@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Structured (JSON) logging configuration for the API, worker, and idler."""
 
 from __future__ import annotations

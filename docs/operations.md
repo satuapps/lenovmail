@@ -185,4 +185,4 @@ asyncio.run(main())
 ```
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

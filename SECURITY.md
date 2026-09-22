@@ -56,4 +56,4 @@ What Lenovmail defends against, in terms of what's actually implemented:
 
 ---
 
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

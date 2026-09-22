@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Shared formatters for the GUI; used by every feature to keep date/size display consistent.
 
 const DATE_TIME = new Intl.DateTimeFormat("en-US", {

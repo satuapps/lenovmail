@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // MailPage right panel: header, action toolbar, message body (sanitized HTML / plain text), and attachments.
 import { useMemo, useState } from "react";
 import DOMPurify from "dompurify";

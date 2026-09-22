@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Raw MIME blob storage: content-addressed, gzip, atomic writes.
 
 Layout: `BLOB_ROOT/<hex[0:2]>/<hex[2:4]>/<hex>.eml.gz`.

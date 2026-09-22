@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Agent access model: scoped tokens and audit log."""
 
 from __future__ import annotations

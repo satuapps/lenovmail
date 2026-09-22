@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Mail data writer for Postgres, shared by the IMAP and Microsoft Graph sync paths.
 
 Both providers produce the same `Record` (message metadata) and `ParsedMessage` (full

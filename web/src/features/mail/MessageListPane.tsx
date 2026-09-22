@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // MailPage center column: search box + filters + virtualized message list.
 import { useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";

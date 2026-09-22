@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Tests thread formation from References/In-Reply-To headers."""
 
 from __future__ import annotations

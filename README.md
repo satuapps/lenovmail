@@ -198,4 +198,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-Built and maintained by [satuapps](https://github.com/satuapps).
+Built and maintained by [satuapps](https://satuapps.com).

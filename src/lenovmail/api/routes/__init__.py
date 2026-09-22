@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Lenovmail HTTP routes."""
 
 from __future__ import annotations

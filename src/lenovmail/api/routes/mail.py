@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Folders, messages, attachments, write actions, and the send outbox.
 
 An important rule for message listing: one message can live in multiple folders, so

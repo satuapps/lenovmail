@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Mail data models: folders, threads, messages, bodies, search, attachments, outbox, sync runs."""
 
 from __future__ import annotations

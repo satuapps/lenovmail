@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Alembic configuration: metadata from `lenovmail.models`, URL from `Settings`.
 """
 

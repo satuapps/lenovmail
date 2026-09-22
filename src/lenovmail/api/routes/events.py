@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Server-Sent Events: the GUI receives sync updates without polling.
 
 One connection per tab subscribes to the user's Redis channel (`events:user:<id>`), so

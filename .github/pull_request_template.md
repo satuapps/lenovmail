@@ -20,4 +20,4 @@
 - [ ] `npm --prefix web run build` passes
 - [ ] New/changed env vars are reflected in `.env.example` and `src/lenovmail/config.py`
 - [ ] New/changed database columns/tables have an Alembic migration under `migrations/versions/`
-- [ ] New source files start with the `# Lenovmail — authored by satuapps` credit line
+- [ ] New source files start with the `# Lenovmail — authored by satuapps (satuapps.com)` credit line

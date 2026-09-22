@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Event publishing to the GUI over Redis pub/sub.
 
 `init_events()` is called at API/worker/idler startup. When not yet initialized

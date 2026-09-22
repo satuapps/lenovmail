@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Message thread formation from `Message-ID`/`References`/`In-Reply-To` headers.
 
 The rule is conservative: threads only merge when a header reference genuinely matches

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """E2E IMAP tests against a real mail server (GreenMail in docker-compose.test.yml).
 
 Automatically skipped when the test IMAP port is not open, so `pytest` stays green on

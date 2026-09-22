@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Claiming outbox rows must be atomic when multiple senders run concurrently.
 
 Regression: before `send_pending` claimed a row (`status='sending'` + `locked_at` in a

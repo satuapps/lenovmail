@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Generic SMTP client for outbox delivery.
 
 Used for `provider='imap'` accounts (Graph accounts use `/me/sendMail`). Protocol errors

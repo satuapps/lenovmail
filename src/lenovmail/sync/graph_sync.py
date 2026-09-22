@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Microsoft Graph sync engine: folder delta, message delta, body, and write-back.
 
 Key differences from IMAP:

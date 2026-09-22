@@ -219,4 +219,4 @@ clients — see [agents.md](agents.md).
   app registration.
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

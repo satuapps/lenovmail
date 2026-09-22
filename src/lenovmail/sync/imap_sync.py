@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """IMAP sync engine: incremental header pass, flags, deletion detection, and body backfill.
 
 Ordering that determines correctness (do not change without reason):

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Worker concurrency regressions, all three found by running the stack against a real server.
 
 * GreenMail answers `IDLE` with an untagged `* 43 EXISTS` before the continuation line.

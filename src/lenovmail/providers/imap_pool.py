@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """IMAP connection pool.
 
 `IMAPClient` is blocking, so **every** call to it goes through `asyncio.to_thread`.

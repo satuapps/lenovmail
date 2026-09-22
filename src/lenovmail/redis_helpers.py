@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Thin wrapper around redis-py.
 
 `redis.asyncio.Redis` inherits commands from a dual-mode class, so some methods are

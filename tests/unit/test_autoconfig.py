@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Auto-detection: ISPDB XML parser, negative SRV handling, Microsoft MX rule."""
 
 from __future__ import annotations

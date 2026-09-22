@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // `/outbox` page: single-account send queue, with approval for `pending_approval` items.
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";

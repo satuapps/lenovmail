@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Verify agent bearer tokens for the MCP server.
 
 The accepted token is the same as the REST token (`lnv_...` in the `agent_tokens` table), so

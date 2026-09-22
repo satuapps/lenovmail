@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """HTTP layer: FastAPI application, authentication, and routes."""
 
 from __future__ import annotations

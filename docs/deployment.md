@@ -263,4 +263,4 @@ sudo systemctl enable --now lenovmail.service
 [operations.md](operations.md) for the janitor sweep and other day-2 tasks.
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

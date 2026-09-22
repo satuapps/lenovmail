@@ -60,7 +60,7 @@ npm --prefix web run build
 These are enforced by `ruff`/`mypy` where mechanical, and expected in review otherwise:
 
 - Every source file (`.py`, `.ts`/`.tsx`, `.css`, `.yml`) starts with a
-  `# Lenovmail — authored by satuapps` credit line in that language's comment syntax
+  `# Lenovmail — authored by satuapps (satuapps.com)` credit line in that language's comment syntax
   (`//` for TypeScript, `/* */` for CSS). Markdown files carry the maintainer line at the
   bottom instead.
 - `ruff` line length is 100 (`[tool.ruff]` in `pyproject.toml`); lint rules are
@@ -123,4 +123,4 @@ separate PR.
 
 ---
 
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

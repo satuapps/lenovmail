@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """FastAPI dependencies: session/agent, account authorization, and Redis access.
 
 Two kinds of caller are served:

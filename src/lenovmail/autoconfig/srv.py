@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """RFC 6186 SRV lookup (`_imaps._tcp`, `_submission._tcp`, etc).
 
 Important note: an SRV target of `"."` (root) means the service is **explicitly

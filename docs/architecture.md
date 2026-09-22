@@ -211,4 +211,4 @@ another — fails to decrypt (`InvalidTag`) instead of silently succeeding with 
 wrong key context. The stored format is `version_byte(1) + nonce(12) + ciphertext+tag`.
 
 ---
-Maintained by [satuapps](https://github.com/satuapps).
+Maintained by [satuapps](https://satuapps.com).

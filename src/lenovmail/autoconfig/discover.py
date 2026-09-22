@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Auto-detection chain for mail configuration from an email address.
 
 Order (stops at the first usable result), each step times out after 4 seconds and

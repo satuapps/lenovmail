@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Pure utilities for the mail page: no React state, easy to test in isolation.
 import type { Attachment, Folder } from "../../types";
 

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Authentication: argon2 passwords, browser sessions in Redis, and hashed agent tokens.
 
 Sessions are stored in Redis (not a signed cookie) so they can be revoked: logout,

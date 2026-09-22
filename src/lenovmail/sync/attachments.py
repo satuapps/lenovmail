@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Attachment byte retrieval — used by the REST download route and the MCP tool.
 
 Attachment bytes are not stored separately: for messages that have a MIME blob, the

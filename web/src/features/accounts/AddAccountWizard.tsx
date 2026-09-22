@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api";

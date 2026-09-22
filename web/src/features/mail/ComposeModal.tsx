@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Compose modal: new message, reply, reply all, or forward.
 import { useState } from "react";
 import { api, ApiError } from "../../api";

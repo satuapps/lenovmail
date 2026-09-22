@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Write actions on messages: change flags, move folders, and delete.
 
 Patterns used:

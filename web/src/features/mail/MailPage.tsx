@@ -1,4 +1,4 @@
-// Lenovmail — authored by satuapps
+// Lenovmail — authored by satuapps (satuapps.com)
 // Mail page `/mail`: three panels (account+folder, message list, reader) for a single active account.
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";

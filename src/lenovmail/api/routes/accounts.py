@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Mail accounts: auto-discovery, creation, connection testing, and the Microsoft OAuth
 flow.
 

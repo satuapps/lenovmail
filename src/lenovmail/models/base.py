@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Base ORM declarations: Base, UUID primary key, and timestamp columns."""
 
 from __future__ import annotations

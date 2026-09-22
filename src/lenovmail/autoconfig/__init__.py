@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Detect mail configuration from an email address."""
 
 from . import discover as discover  # module; the `discover()` function lives here

@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Shared fixtures: a real database session and a temporary account.
 
 Tests that need a database are **skipped**, not failed, when Postgres can't be reached

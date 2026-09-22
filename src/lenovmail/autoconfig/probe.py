@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """Heuristic probing: guess IMAP/SMTP hosts by connecting and reading the banner.
 
 A probe is only considered successful if the server actually answers as expected:

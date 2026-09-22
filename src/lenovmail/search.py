@@ -1,4 +1,4 @@
-# Lenovmail — authored by satuapps
+# Lenovmail — authored by satuapps (satuapps.com)
 """SQL full-text search expressions shared by the sync engine and the API.
 
 The `'simple'` text configuration is chosen (instead of a single-language configuration)
