@@ -3,7 +3,12 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../../api";
 import { fullDate, relativeTime } from "../../format";
 import { AGENT_SCOPES } from "../../types";
-import type { Account, AgentAuditEntry, AgentToken, AgentTokenCreated } from "../../types";
+import type {
+  Account,
+  AgentAuditEntry,
+  AgentToken,
+  AgentTokenCreated,
+} from "../../types";
 
 const OUTCOME_CHIP: Record<string, string> = {
   ok: "chip chip-ok",
@@ -26,7 +31,9 @@ export default function AgentTokensPage() {
   const [expiresInDays, setExpiresInDays] = useState<string>("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdToken, setCreatedToken] = useState<AgentTokenCreated | null>(null);
+  const [createdToken, setCreatedToken] = useState<AgentTokenCreated | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
 
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -37,13 +44,15 @@ export default function AgentTokensPage() {
       const [tokenList, accountList, auditList] = await Promise.all([
         api.listTokens(),
         api.listAccounts(),
-        api.listAudit(200),
+        api.listAudit({ limit: 200 }),
       ]);
       setTokens(tokenList);
       setAccounts(accountList);
       setAudit(auditList);
     } catch (err) {
-      setLoadError(err instanceof ApiError ? err.message : "Failed to load token data.");
+      setLoadError(
+        err instanceof ApiError ? err.message : "Failed to load token data.",
+      );
     }
   }, []);
 
@@ -52,7 +61,9 @@ export default function AgentTokensPage() {
   }, [load]);
 
   function toggleScope(scope: string) {
-    setScopes((prev) => (prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]));
+    setScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
+    );
   }
 
   async function handleCreate() {
@@ -65,7 +76,9 @@ export default function AgentTokensPage() {
         account_ids: accountIds.length > 0 ? accountIds : null,
         require_send_approval: requireApproval,
         send_limit_per_hour: sendLimit,
-        expires_in_days: expiresInDays ? Number.parseInt(expiresInDays, 10) : null,
+        expires_in_days: expiresInDays
+          ? Number.parseInt(expiresInDays, 10)
+          : null,
       });
       setCreatedToken(created);
       setCopied(false);
@@ -77,14 +90,20 @@ export default function AgentTokensPage() {
       setExpiresInDays("");
       await load();
     } catch (err) {
-      setCreateError(err instanceof ApiError ? err.message : "Failed to create token.");
+      setCreateError(
+        err instanceof ApiError ? err.message : "Failed to create token.",
+      );
     } finally {
       setCreating(false);
     }
   }
 
   async function handleRevoke(token: AgentToken) {
-    if (!window.confirm(`Revoke token "${token.name}"? Agents using it will be denied immediately.`)) {
+    if (
+      !window.confirm(
+        `Revoke token "${token.name}"? Agents using it will be denied immediately.`,
+      )
+    ) {
       return;
     }
     setRevokingId(token.id);
@@ -92,7 +111,9 @@ export default function AgentTokensPage() {
       await api.revokeToken(token.id);
       await load();
     } catch (err) {
-      setLoadError(err instanceof ApiError ? err.message : "Failed to revoke token.");
+      setLoadError(
+        err instanceof ApiError ? err.message : "Failed to revoke token.",
+      );
     } finally {
       setRevokingId(null);
     }
@@ -115,8 +136,9 @@ export default function AgentTokensPage() {
       )}
 
       <div className="mb-4 card border-accent/40 bg-accent/5 text-sm text-fg-muted">
-        AI agents use this token as the <code className="mono">Authorization: Bearer &lt;token&gt;</code>{" "}
-        header to call the REST <code className="mono">/api/...</code> API and the MCP{" "}
+        AI agents use this token as the{" "}
+        <code className="mono">Authorization: Bearer &lt;token&gt;</code> header
+        to call the REST <code className="mono">/api/...</code> API and the MCP{" "}
         <code className="mono">/api/mcp</code> endpoint.
       </div>
 
@@ -129,7 +151,11 @@ export default function AgentTokensPage() {
             <code className="mono flex-1 overflow-x-auto rounded-md bg-ink-900 px-3 py-2 text-sm text-fg">
               {createdToken.token}
             </code>
-            <button type="button" className="btn" onClick={() => void handleCopy()}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void handleCopy()}
+            >
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
@@ -142,14 +168,22 @@ export default function AgentTokensPage() {
           <label className="label" htmlFor="token-name">
             Name
           </label>
-          <input id="token-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            id="token-name"
+            className="input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
 
         <div className="mb-3">
           <div className="label">Scope</div>
           <div className="flex flex-wrap gap-3">
             {AGENT_SCOPES.map((scope) => (
-              <label key={scope} className="flex items-center gap-1.5 text-sm text-fg">
+              <label
+                key={scope}
+                className="flex items-center gap-1.5 text-sm text-fg"
+              >
                 <input
                   type="checkbox"
                   checked={scopes.includes(scope)}
@@ -170,7 +204,11 @@ export default function AgentTokensPage() {
             className="input"
             multiple
             value={accountIds}
-            onChange={(e) => setAccountIds(Array.from(e.target.selectedOptions, (o) => o.value))}
+            onChange={(e) =>
+              setAccountIds(
+                Array.from(e.target.selectedOptions, (o) => o.value),
+              )
+            }
           >
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
@@ -236,8 +274,12 @@ export default function AgentTokensPage() {
 
       <div className="mb-6 card">
         <div className="mb-3 text-sm font-medium text-fg">Active tokens</div>
-        {tokens === null && <div className="text-sm text-fg-muted">Loading…</div>}
-        {tokens && tokens.length === 0 && <div className="text-sm text-fg-muted">No tokens yet.</div>}
+        {tokens === null && (
+          <div className="text-sm text-fg-muted">Loading…</div>
+        )}
+        {tokens && tokens.length === 0 && (
+          <div className="text-sm text-fg-muted">No tokens yet.</div>
+        )}
         {tokens && tokens.length > 0 && (
           <table className="w-full text-sm">
             <thead>
@@ -254,10 +296,15 @@ export default function AgentTokensPage() {
             </thead>
             <tbody>
               {tokens.map((token) => (
-                <tr key={token.id} className="border-t border-ink-600 align-top">
+                <tr
+                  key={token.id}
+                  className="border-t border-ink-600 align-top"
+                >
                   <td className="py-1.5 text-fg">
                     {token.name}
-                    {token.revoked_at && <span className="chip chip-danger ml-2">revoked</span>}
+                    {token.revoked_at && (
+                      <span className="chip chip-danger ml-2">revoked</span>
+                    )}
                   </td>
                   <td className="py-1.5">
                     <div className="flex flex-wrap gap-1">
@@ -272,13 +319,25 @@ export default function AgentTokensPage() {
                     {token.account_ids === null
                       ? "all accounts"
                       : token.account_ids
-                          .map((id) => accounts.find((a) => a.id === id)?.email_address ?? id)
+                          .map(
+                            (id) =>
+                              accounts.find((a) => a.id === id)
+                                ?.email_address ?? id,
+                          )
                           .join(", ") || "—"}
                   </td>
-                  <td className="py-1.5 text-fg-muted">{token.require_send_approval ? "yes" : "no"}</td>
-                  <td className="py-1.5 text-fg-muted">{token.send_limit_per_hour}</td>
-                  <td className="py-1.5 text-fg-muted">{fullDate(token.expires_at)}</td>
-                  <td className="py-1.5 text-fg-muted">{relativeTime(token.last_used_at)}</td>
+                  <td className="py-1.5 text-fg-muted">
+                    {token.require_send_approval ? "yes" : "no"}
+                  </td>
+                  <td className="py-1.5 text-fg-muted">
+                    {token.send_limit_per_hour}
+                  </td>
+                  <td className="py-1.5 text-fg-muted">
+                    {fullDate(token.expires_at)}
+                  </td>
+                  <td className="py-1.5 text-fg-muted">
+                    {relativeTime(token.last_used_at)}
+                  </td>
                   <td className="py-1.5">
                     {!token.revoked_at && (
                       <button
@@ -300,8 +359,12 @@ export default function AgentTokensPage() {
 
       <div className="card">
         <div className="mb-3 text-sm font-medium text-fg">Audit</div>
-        {audit === null && <div className="text-sm text-fg-muted">Loading…</div>}
-        {audit && audit.length === 0 && <div className="text-sm text-fg-muted">No activity yet.</div>}
+        {audit === null && (
+          <div className="text-sm text-fg-muted">Loading…</div>
+        )}
+        {audit && audit.length === 0 && (
+          <div className="text-sm text-fg-muted">No activity yet.</div>
+        )}
         {audit && audit.length > 0 && (
           <table className="w-full text-sm">
             <thead>
@@ -316,14 +379,22 @@ export default function AgentTokensPage() {
             <tbody>
               {audit.map((entry) => (
                 <tr key={entry.id} className="border-t border-ink-600">
-                  <td className="py-1.5 text-fg-muted">{fullDate(entry.created_at)}</td>
+                  <td className="py-1.5 text-fg-muted">
+                    {fullDate(entry.created_at)}
+                  </td>
                   <td className="py-1.5 text-fg mono">{entry.tool}</td>
                   <td className="py-1.5">
-                    <span className={OUTCOME_CHIP[entry.outcome] ?? "chip"}>{entry.outcome}</span>
+                    <span className={OUTCOME_CHIP[entry.outcome] ?? "chip"}>
+                      {entry.outcome}
+                    </span>
                   </td>
-                  <td className="py-1.5 text-xs text-danger">{entry.error ?? ""}</td>
+                  <td className="py-1.5 text-xs text-danger">
+                    {entry.error ?? ""}
+                  </td>
                   <td className="py-1.5 text-xs text-fg-dim mono">
-                    {entry.target_ids ? entry.target_ids.map(String).join(", ") : ""}
+                    {entry.target_ids
+                      ? entry.target_ids.map(String).join(", ")
+                      : ""}
                   </td>
                 </tr>
               ))}

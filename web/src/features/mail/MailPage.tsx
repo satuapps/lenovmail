@@ -10,7 +10,14 @@ import MessageListPane from "./MessageListPane";
 import ReadingPane from "./ReadingPane";
 import ComposeModal from "./ComposeModal";
 import type { ComposeInitial } from "./ComposeModal";
-import { useAccounts, useDebouncedValue, useFolders, useMessageDetail, useMessages } from "./mailHooks";
+import {
+  useAccounts,
+  useDebouncedValue,
+  useFolders,
+  useMessageDetail,
+  useMessages,
+} from "./mailHooks";
+import { ALL_ACCOUNTS } from "./mailUtils";
 
 const NEW_MESSAGE_INITIAL: ComposeInitial = {
   to: "",
@@ -26,24 +33,30 @@ export default function MailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { accounts, loading: accountsLoading } = useAccounts();
 
-  const accountParam = searchParams.get("account");
+  // `|| null`: an empty `?account=` must fall back to the default account, never be sent
+  // to the API as `/api/accounts//messages`.
+  const accountParam = searchParams.get("account") || null;
   const folderParam = searchParams.get("folder");
   const messageParam = searchParams.get("message");
   const qParam = searchParams.get("q") ?? "";
   const unread = searchParams.get("unread") === "1";
   const flagged = searchParams.get("flagged") === "1";
   const attachmentsOnly = searchParams.get("attachments") === "1";
+  const valueKinds = searchParams.getAll("value");
   const oauthStatus = searchParams.get("oauth");
 
   const [searchInput, setSearchInput] = useState(qParam);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
-  const [composeInitial, setComposeInitial] = useState<ComposeInitial | null>(null);
+  const [composeInitial, setComposeInitial] = useState<ComposeInitial | null>(
+    null,
+  );
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [updateBanner, setUpdateBanner] = useState<string | null>(null);
   const [sentNotice, setSentNotice] = useState(false);
 
   // Select the first account by default once accounts are available, and persist it in the URL.
+  // The explicit "all" scope counts as a selection, so it is never overwritten here.
   useEffect(() => {
     if (accountParam !== null || accounts.length === 0) return;
     const first = accounts[0];
@@ -65,20 +78,30 @@ export default function MailPage() {
   }, [debouncedSearch]);
 
   const activeAccountId = accountParam;
-  const activeAccount = accounts.find((account) => account.id === activeAccountId) ?? null;
+  const allAccounts = activeAccountId === ALL_ACCOUNTS;
+  const activeAccount =
+    accounts.find((account) => account.id === activeAccountId) ?? null;
   const { folders, reload: reloadFolders } = useFolders(activeAccountId);
 
+  const accountLabels = Object.fromEntries(
+    accounts.map((account) => [account.id, account.email_address]),
+  );
+
   const messageQuery: MessageQuery = {
-    folder_id: folderParam ?? undefined,
+    // Folders belong to one mailbox; an all-accounts listing has no folder to scope to.
+    folder_id: allAccounts ? undefined : (folderParam ?? undefined),
     q: qParam || undefined,
     unread: unread || undefined,
     flagged: flagged || undefined,
     has_attachments: attachmentsOnly || undefined,
+    value_kind: valueKinds.length > 0 ? valueKinds : undefined,
   };
   const messagesState = useMessages(activeAccountId, messageQuery);
   const detail = useMessageDetail(messageParam);
 
-  const [oauthBanner, setOauthBanner] = useState<{ status: string } | null>(null);
+  const [oauthBanner, setOauthBanner] = useState<{ status: string } | null>(
+    null,
+  );
   useEffect(() => {
     if (oauthStatus === null) return;
     setOauthBanner({ status: oauthStatus });
@@ -94,17 +117,35 @@ export default function MailPage() {
   }, [oauthStatus]);
 
   useEventStream((event) => {
-    const accountId = typeof event.payload.account_id === "string" ? event.payload.account_id : null;
+    const accountId =
+      typeof event.payload.account_id === "string"
+        ? event.payload.account_id
+        : null;
     if (accountId === null || accountId !== activeAccountId) return;
     if (event.type === "folder.counts") {
       reloadFolders();
-    } else if (event.type === "message.new" || event.type === "message.updated") {
-      const eventFolderId = typeof event.payload.folder_id === "string" ? event.payload.folder_id : null;
-      const matchesFolder = folderParam === null || eventFolderId === null || eventFolderId === folderParam;
+    } else if (
+      event.type === "message.new" ||
+      event.type === "message.updated"
+    ) {
+      const eventFolderId =
+        typeof event.payload.folder_id === "string"
+          ? event.payload.folder_id
+          : null;
+      const matchesFolder =
+        folderParam === null ||
+        eventFolderId === null ||
+        eventFolderId === folderParam;
       if (matchesFolder) {
-        setUpdateBanner(event.type === "message.new" ? "New message." : "Message updated.");
+        setUpdateBanner(
+          event.type === "message.new" ? "New message." : "Message updated.",
+        );
       }
-      if (messageParam !== null && (eventFolderId === null || detail.message?.folder_ids.includes(eventFolderId))) {
+      if (
+        messageParam !== null &&
+        (eventFolderId === null ||
+          detail.message?.folder_ids.includes(eventFolderId))
+      ) {
         detail.reload();
       }
     }
@@ -119,6 +160,17 @@ export default function MailPage() {
 
   const toggleBoolParam = (key: string, current: boolean) => {
     updateSearchParam(key, current ? null : "1");
+  };
+
+  const toggleValueKind = (kind: string) => {
+    const next = new URLSearchParams(searchParams);
+    const current = next.getAll("value");
+    next.delete("value");
+    for (const item of current) {
+      if (item !== kind) next.append("value", item);
+    }
+    if (!current.includes(kind)) next.append("value", kind);
+    setSearchParams(next, { replace: true });
   };
 
   const runAction = (action: () => Promise<void>) => {
@@ -185,7 +237,9 @@ export default function MailPage() {
         {oauthBanner !== null && (
           <div
             className={`flex items-center justify-between px-4 py-2 text-sm ${
-              oauthBanner.status === "ok" ? "bg-ok/10 text-ok" : "bg-danger/10 text-danger"
+              oauthBanner.status === "ok"
+                ? "bg-ok/10 text-ok"
+                : "bg-danger/10 text-danger"
             }`}
           >
             <span>
@@ -211,13 +265,18 @@ export default function MailPage() {
             </div>
           </div>
         )}
-        {actionError !== null && <div className="bg-danger/10 px-4 py-2 text-sm text-danger">{actionError}</div>}
+        {actionError !== null && (
+          <div className="bg-danger/10 px-4 py-2 text-sm text-danger">
+            {actionError}
+          </div>
+        )}
 
         <div className="border-b border-ink-600 px-4 py-2">
           <button
             type="button"
             className="btn btn-primary"
-            disabled={activeAccountId === null}
+            disabled={activeAccountId === null || allAccounts}
+            title={allAccounts ? "Pick one account to compose" : undefined}
             onClick={() => setComposeInitial(NEW_MESSAGE_INITIAL)}
           >
             Compose
@@ -241,7 +300,12 @@ export default function MailPage() {
             flaggedOnly={flagged}
             onToggleFlagged={() => toggleBoolParam("flagged", flagged)}
             attachmentsOnly={attachmentsOnly}
-            onToggleAttachments={() => toggleBoolParam("attachments", attachmentsOnly)}
+            onToggleAttachments={() =>
+              toggleBoolParam("attachments", attachmentsOnly)
+            }
+            valueKinds={valueKinds}
+            onToggleValueKind={toggleValueKind}
+            accountLabels={allAccounts ? accountLabels : null}
             updateBanner={updateBanner}
             onDismissUpdateBanner={() => setUpdateBanner(null)}
             onRefresh={() => {

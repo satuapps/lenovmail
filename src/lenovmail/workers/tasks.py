@@ -19,16 +19,17 @@ import asyncio
 import contextlib
 import uuid
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import or_, select, text
+from sqlalchemy import delete, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import maintenance
 from ..config import settings
 from ..db import SessionLocal
 from ..logging import get_logger
-from ..models import Account, Folder, GraphSettings
+from ..models import Account, Folder, GraphSettings, Message, MessageBody, MessageValue
 from ..providers.accounts import (
     AccountConfigError,
     get_account_pool,
@@ -39,6 +40,7 @@ from ..providers.accounts import (
 from ..providers.graph import GraphAuthError, GraphClient, GraphTransientError, dump_token_cache
 from ..providers.imap_pool import ImapPool, MailAuthError, MailTransientError
 from ..sync import graph_sync, imap_sync, outbox
+from ..sync.mining import mine_values
 
 log = get_logger(__name__)
 
@@ -489,6 +491,52 @@ async def backfill_bodies(
                 await client.aclose()
 
         return stored_total
+
+
+async def mine_values_backfill(ctx: dict, limit: int | None = None) -> int:
+    """Extract mined values for messages stored before mining existed.
+
+    `messages.values_mined_at` is stamped by `store.write_content`, so this job only ever
+    sees rows written before the extractor existed — including the ones whose body turned
+    out to hold nothing, which are stamped anyway so they are not re-read forever.
+    """
+    batch = limit or settings.mining_backfill_max_per_run
+    async with SessionLocal() as session:
+        rows = (
+            await session.execute(
+                select(Message.id, Message.subject, MessageBody.body_text)
+                .join(MessageBody, MessageBody.message_id == Message.id)
+                .where(Message.values_mined_at.is_(None), Message.body_state != "none")
+                .order_by(Message.created_at.desc())
+                .limit(batch)
+            )
+        ).all()
+
+        for message_id, subject, body_text in rows:
+            await session.execute(delete(MessageValue).where(MessageValue.message_id == message_id))
+            mined = mine_values(subject, body_text)
+            if mined:
+                session.add_all(
+                    [
+                        MessageValue(
+                            message_id=message_id,
+                            kind=item.kind,
+                            value=item.value,
+                            confidence=item.confidence,
+                        )
+                        for item in mined
+                    ]
+                )
+            await session.execute(
+                update(Message)
+                .where(Message.id == message_id)
+                .values(values_mined_at=datetime.now(UTC))
+            )
+        await session.commit()
+
+    if rows:
+        log.info("mine_values_backfill", messages=len(rows))
+    return len(rows)
 
 
 async def janitor_sweep(ctx: dict) -> dict:

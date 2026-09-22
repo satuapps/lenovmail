@@ -42,6 +42,17 @@ class PasswordChange(BaseModel):
     new_password: str = Field(min_length=10, max_length=1024)
 
 
+class SessionOut(BaseModel):
+    """One browser session. `id` is a digest of the session token, never the token itself."""
+
+    id: str
+    created_at: datetime
+    last_seen_at: datetime | None = None
+    ip: str | None = None
+    user_agent: str | None = None
+    current: bool = False
+
+
 # --- accounts & autoconfig --------------------------------------------------------
 
 
@@ -103,6 +114,11 @@ class AccountOut(ORMModel):
     last_sync_at: datetime | None
     unread: int = 0
     total: int = 0
+    invalid_since: datetime | None = None
+    # When the janitor would retire this account, derived from `invalid_since` + grace.
+    retire_at: datetime | None = None
+    retire_action: str | None = None
+    retire_warning: bool = False
     # Only set when creating a Microsoft account: the consent URL the user must open.
     oauth_url: str | None = None
 
@@ -152,8 +168,19 @@ class MessageOut(ORMModel):
     seen: bool = False
     flagged: bool = False
     folder_ids: list[uuid.UUID] = Field(default_factory=list)
+    # Kinds of mined values this message holds; the values themselves need their own call.
+    value_kinds: list[str] = Field(default_factory=list)
     # Raw `Message-ID` header: used by GUI/agents to build replies (`in_reply_to`).
     rfc822_message_id: str | None = None
+
+
+class MessageValueOut(BaseModel):
+    id: uuid.UUID
+    kind: str
+    # Masked unless the caller asked for a reveal, which is written to `agent_audit`.
+    value: str
+    confidence: int
+    revealed: bool = False
 
 
 class MessagePage(BaseModel):
@@ -232,6 +259,60 @@ class OutboxOut(ORMModel):
     last_error: str | None
     created_at: datetime
     sent_at: datetime | None
+
+
+# --- stats & ops ------------------------------------------------------------------
+
+
+class ProviderStats(BaseModel):
+    provider: str
+    accounts_total: int = 0
+    accounts_active: int = 0
+    # `error` is a server that did not answer; `auth_error` is a credential the server
+    # refused. They are counted apart because only the second one needs a human.
+    accounts_unreachable: int = 0
+    accounts_auth_rejected: int = 0
+    accounts_disabled: int = 0
+    messages: int = 0
+    retire_warnings: int = 0
+
+
+class OverviewOut(BaseModel):
+    accounts_total: int = 0
+    accounts_active: int = 0
+    accounts_unreachable: int = 0
+    accounts_auth_rejected: int = 0
+    accounts_disabled: int = 0
+    messages_total: int = 0
+    unread_total: int = 0
+    providers: list[ProviderStats] = Field(default_factory=list)
+
+
+class ProviderOps(BaseModel):
+    provider: str
+    accounts_total: int = 0
+    sync_runs_24h: int = 0
+    sync_failures_24h: int = 0
+    sent_last_hour: int = 0
+    send_limit_per_hour: int
+    max_connections_per_account: int | None = None
+    poll_interval_s: int | None = None
+
+
+class JanitorOut(BaseModel):
+    grace_days: int
+    action: str
+    check_batch: int
+    token_retention_days: int
+    audit_retention_days: int
+    next_retire_at: datetime | None = None
+
+
+class OpsSummaryOut(BaseModel):
+    unreachable: list[AccountOut] = Field(default_factory=list)
+    auth_rejected: list[AccountOut] = Field(default_factory=list)
+    janitor: JanitorOut
+    providers: list[ProviderOps] = Field(default_factory=list)
 
 
 # --- agent ----------------------------------------------------------------------

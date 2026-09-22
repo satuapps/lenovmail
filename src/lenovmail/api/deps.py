@@ -11,6 +11,7 @@ Two kinds of caller are served:
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Annotated, Any
@@ -120,12 +121,14 @@ async def current_principal(
     cookie = request.cookies.get(security.SESSION_COOKIE)
     if not cookie:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="not signed in")
-    user_id = await security.read_session(get_redis(request), cookie)
+    redis = get_redis(request)
+    user_id = await security.read_session(redis, cookie)
     if user_id is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="session expired")
     user = await session.get(User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="user is inactive")
+    await security.touch_session(redis, cookie, user_id)
     return Principal(user=user, scopes=ALL_SCOPES)
 
 
@@ -167,3 +170,25 @@ async def owned_account(
 
 
 AccountDep = Annotated[Account, Depends(owned_account)]
+
+
+async def readable_account_ids(
+    session: AsyncSession, principal: Principal, requested: Sequence[uuid.UUID] | None = None
+) -> list[uuid.UUID]:
+    """Account ids the principal may read, optionally narrowed to `requested`.
+
+    Cross-account routes cannot lean on `owned_account`, so ownership and the agent
+    token's allowlist are resolved here instead. An id outside the set answers 404 (not
+    403) so a token cannot use the endpoint to discover which accounts exist.
+    """
+    query = select(Account.id).where(Account.owner_id == principal.user_id)
+    if principal.account_ids is not None:
+        query = query.where(Account.id.in_(principal.account_ids))
+    allowed = list((await session.execute(query.order_by(Account.created_at))).scalars().all())
+    if requested is None:
+        return allowed
+    permitted = set(allowed)
+    for account_id in requested:
+        if account_id not in permitted:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="account not found")
+    return [account_id for account_id in allowed if account_id in set(requested)]

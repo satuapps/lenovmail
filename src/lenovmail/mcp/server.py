@@ -34,6 +34,7 @@ from ..api.serializers import (
     folders_out,
     message_flags,
     message_out,
+    message_value_kinds,
     thread_out,
 )
 from ..config import settings
@@ -218,7 +219,7 @@ async def search_messages(
         try:
             rows, next_cursor = await list_messages(
                 session,
-                account.id,
+                [account.id],
                 folder_id=_uuid(folder_id, "folder_id") if folder_id else None,
                 q=query,
                 unread=unread,
@@ -231,9 +232,14 @@ async def search_messages(
             raise ToolError(str(exc)) from exc
         except (ValueError, TypeError) as exc:
             raise ToolError("invalid cursor") from exc
-        flags = await message_flags(session, [row.id for row in rows], None)
+        ids = [row.id for row in rows]
+        flags = await message_flags(session, ids, None)
+        kinds = await message_value_kinds(session, ids)
         return {
-            "items": [message_out(row, flags.get(row.id)).model_dump(mode="json") for row in rows],
+            "items": [
+                message_out(row, flags.get(row.id), kinds.get(row.id)).model_dump(mode="json")
+                for row in rows
+            ],
             "next_cursor": next_cursor,
         }
 
@@ -244,8 +250,11 @@ async def get_message(message_id: str, include_body: bool = True) -> dict[str, A
         principal.require("mail.read")
         message = await _message_of(session, principal, message_id)
         flags = await message_flags(session, [message.id])
+        kinds = await message_value_kinds(session, [message.id])
         result: dict[str, Any] = {
-            "message": message_out(message, flags.get(message.id)).model_dump(mode="json")
+            "message": message_out(
+                message, flags.get(message.id), kinds.get(message.id)
+            ).model_dump(mode="json")
         }
         if include_body:
             body = await body_out(session, message)
@@ -282,7 +291,12 @@ async def set_message_flags(
             raise ToolError(str(exc)) from exc
         await session.refresh(message)
         flags = await message_flags(session, [message.id])
-        return {"message": message_out(message, flags.get(message.id)).model_dump(mode="json")}
+        kinds = await message_value_kinds(session, [message.id])
+        return {
+            "message": message_out(
+                message, flags.get(message.id), kinds.get(message.id)
+            ).model_dump(mode="json")
+        }
 
 
 @server.tool(description="Move a message to another folder in the same account.")

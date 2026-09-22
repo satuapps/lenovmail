@@ -22,8 +22,17 @@ from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import Attachment, MailboxMessage, Message, MessageBody, MessageRef, MessageSearch
+from ..models import (
+    Attachment,
+    MailboxMessage,
+    Message,
+    MessageBody,
+    MessageRef,
+    MessageSearch,
+    MessageValue,
+)
 from ..search import tsvector_expr
+from .mining import mine_values
 from .normalize import ParsedMessage, search_tsvector_input
 from .threads import assign_thread
 
@@ -584,6 +593,7 @@ async def write_content(
         "sent_date": parsed.sent_date,
         "rfc822_message_id": parsed.rfc822_message_id,
         "headers": parsed.headers or None,
+        "values_mined_at": datetime.now(UTC),
     }
     if parsed.size_bytes is not None:
         values["size_bytes"] = parsed.size_bytes
@@ -601,6 +611,23 @@ async def write_content(
             body_html=parsed.body_html,
         )
     )
+
+    # Re-mined from scratch on every body write: a message upgraded from `partial` to
+    # `full` must not keep values extracted from the shorter text.
+    await session.execute(delete(MessageValue).where(MessageValue.message_id == message_row_id))
+    mined = mine_values(parsed.subject, parsed.body_text)
+    if mined:
+        session.add_all(
+            [
+                MessageValue(
+                    message_id=message_row_id,
+                    kind=item.kind,
+                    value=item.value,
+                    confidence=item.confidence,
+                )
+                for item in mined
+            ]
+        )
 
     await session.execute(delete(Attachment).where(Attachment.message_id == message_row_id))
     if parsed.attachments:

@@ -1,5 +1,6 @@
 # Lenovmail — authored by satuapps (satuapps.com)
-"""Mail data models: folders, threads, messages, bodies, search, attachments, outbox, sync runs."""
+"""Mail data models: folders, threads, messages, bodies, search, mined values, attachments,
+outbox, sync runs."""
 
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ ROLE_VALUES = "'inbox','sent','drafts','trash','junk','archive','other'"
 SYNC_STATE_VALUES = "'idle','syncing','error'"
 BODY_STATE_VALUES = "'none','partial','full'"
 OUTBOX_STATUS_VALUES = "'pending_approval','queued','sending','sent','failed'"
+VALUE_KIND_VALUES = "'otp','reset_link','key','promo'"
 
 
 class Folder(UUIDPk, Base):
@@ -126,6 +128,9 @@ class Message(UUIDPk, Base):
     blob_sha256: Mapped[bytes | None] = mapped_column(LargeBinary)
     body_state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="none")
     headers: Mapped[dict | None] = mapped_column(JSONB)
+    # Set once the value extractor has seen this message; NULL means "not scanned yet",
+    # which is what the backfill job selects on.
+    values_mined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -189,6 +194,28 @@ class MessageSearch(Base):
         UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True
     )
     tsv: Mapped[str | None] = mapped_column(TSVECTOR)
+
+
+class MessageValue(UUIDPk, Base):
+    """One actionable value mined out of a message (code, reset link, key, promo code)."""
+
+    __tablename__ = "message_values"
+    __table_args__ = (
+        CheckConstraint(f"kind in ({VALUE_KIND_VALUES})", name="message_values_kind_check"),
+        CheckConstraint("confidence between 0 and 100", name="message_values_confidence_check"),
+        UniqueConstraint("message_id", "kind", "value", name="message_values_unique"),
+        Index("message_values_kind_idx", "kind", "message_id"),
+    )
+
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    confidence: Mapped[int] = mapped_column(Integer, nullable=False, server_default="70")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
 
 class MessageRef(Base):

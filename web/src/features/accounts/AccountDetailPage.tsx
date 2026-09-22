@@ -4,6 +4,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api";
 import { fullDate, relativeTime } from "../../format";
 import type { Account, AccountTest, Folder, OutboxItem } from "../../types";
+import {
+  ACCOUNT_STATUS_LABEL,
+  accountStatusChipClass,
+} from "../mail/mailUtils";
 
 const SYNC_INTERVALS = [
   { value: 60, label: "1 minute" },
@@ -57,7 +61,11 @@ export default function AccountDetailPage() {
       setDisplayName(accountData.display_name ?? "");
       setSyncInterval(accountData.sync_interval_s);
     } catch (err) {
-      setLoadError(err instanceof ApiError ? err.message : "Failed to load account details.");
+      setLoadError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to load account details.",
+      );
     }
   }, [accountId]);
 
@@ -80,7 +88,9 @@ export default function AccountDetailPage() {
       setAccount(updated);
       setSaveMessage("Settings saved.");
     } catch (err) {
-      setSaveMessage(err instanceof ApiError ? err.message : "Failed to save settings.");
+      setSaveMessage(
+        err instanceof ApiError ? err.message : "Failed to save settings.",
+      );
     } finally {
       setSaving(false);
     }
@@ -91,9 +101,13 @@ export default function AccountDetailPage() {
     setSyncMessage(null);
     try {
       const result = await api.syncAccount(accountId as string);
-      setSyncMessage(result.status ? `Sync: ${result.status}` : "Sync scheduled.");
+      setSyncMessage(
+        result.status ? `Sync: ${result.status}` : "Sync scheduled.",
+      );
     } catch (err) {
-      setSyncMessage(err instanceof ApiError ? err.message : "Failed to start sync.");
+      setSyncMessage(
+        err instanceof ApiError ? err.message : "Failed to start sync.",
+      );
     } finally {
       setSyncing(false);
     }
@@ -106,7 +120,9 @@ export default function AccountDetailPage() {
     try {
       setTestResult(await api.testAccount(accountId as string));
     } catch (err) {
-      setTestError(err instanceof ApiError ? err.message : "Failed to test connection.");
+      setTestError(
+        err instanceof ApiError ? err.message : "Failed to test connection.",
+      );
     } finally {
       setTesting(false);
     }
@@ -114,7 +130,11 @@ export default function AccountDetailPage() {
 
   async function handleDelete() {
     if (!account) return;
-    if (!window.confirm(`Delete account ${account.email_address}? This cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Delete account ${account.email_address}? This cannot be undone.`,
+      )
+    ) {
       return;
     }
     setDeleting(true);
@@ -122,7 +142,9 @@ export default function AccountDetailPage() {
       await api.deleteAccount(accountId as string);
       navigate("/accounts");
     } catch (err) {
-      setLoadError(err instanceof ApiError ? err.message : "Failed to delete account.");
+      setLoadError(
+        err instanceof ApiError ? err.message : "Failed to delete account.",
+      );
       setDeleting(false);
     }
   }
@@ -148,7 +170,9 @@ export default function AccountDetailPage() {
           <h1 className="page-title">{account.email_address}</h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-fg-muted">
             <span className="chip">{account.provider}</span>
-            <span className="chip">{account.status}</span>
+            <span className={accountStatusChipClass(account.status)}>
+              {ACCOUNT_STATUS_LABEL[account.status] ?? account.status}
+            </span>
           </div>
         </div>
         <Link to="/accounts" className="btn btn-ghost">
@@ -173,10 +197,20 @@ export default function AccountDetailPage() {
           </dd>
         </dl>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className="btn" disabled={syncing} onClick={() => void handleSync()}>
+          <button
+            type="button"
+            className="btn"
+            disabled={syncing}
+            onClick={() => void handleSync()}
+          >
             {syncing ? "Syncing…" : "Sync now"}
           </button>
-          <button type="button" className="btn" disabled={testing} onClick={() => void handleTest()}>
+          <button
+            type="button"
+            className="btn"
+            disabled={testing}
+            onClick={() => void handleTest()}
+          >
             {testing ? "Testing…" : "Test connection"}
           </button>
           {account.oauth_url && (
@@ -184,15 +218,21 @@ export default function AccountDetailPage() {
               type="button"
               className="btn"
               onClick={() =>
-                window.location.assign(`/api/oauth/microsoft/start?account_id=${accountId}`)
+                window.location.assign(
+                  `/api/oauth/microsoft/start?account_id=${accountId}`,
+                )
               }
             >
               Reconnect Microsoft
             </button>
           )}
         </div>
-        {syncMessage && <div className="mt-2 text-xs text-fg-muted">{syncMessage}</div>}
-        {testError && <div className="mt-2 text-xs text-danger">{testError}</div>}
+        {syncMessage && (
+          <div className="mt-2 text-xs text-fg-muted">{syncMessage}</div>
+        )}
+        {testError && (
+          <div className="mt-2 text-xs text-danger">{testError}</div>
+        )}
         {testResult && (
           <table className="mt-3 w-full text-xs">
             <thead>
@@ -253,10 +293,17 @@ export default function AccountDetailPage() {
             ))}
           </select>
         </div>
-        <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void handleSave()}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={saving}
+          onClick={() => void handleSave()}
+        >
           {saving ? "Saving…" : "Save settings"}
         </button>
-        {saveMessage && <div className="mt-2 text-xs text-fg-muted">{saveMessage}</div>}
+        {saveMessage && (
+          <div className="mt-2 text-xs text-fg-muted">{saveMessage}</div>
+        )}
       </div>
 
       <div className="mb-4 card">
@@ -280,11 +327,15 @@ export default function AccountDetailPage() {
                   <td className="py-1.5 text-fg">{folder.name}</td>
                   <td className="py-1.5 text-fg-muted">{folder.role}</td>
                   <td className="py-1.5">
-                    <span className={FOLDER_STATE_CHIP[folder.sync_state] ?? "chip"}>
+                    <span
+                      className={FOLDER_STATE_CHIP[folder.sync_state] ?? "chip"}
+                    >
                       {folder.sync_state}
                     </span>
                     {folder.sync_error && (
-                      <div className="mt-0.5 text-xs text-danger">{folder.sync_error}</div>
+                      <div className="mt-0.5 text-xs text-danger">
+                        {folder.sync_error}
+                      </div>
                     )}
                   </td>
                   <td className="py-1.5 text-fg-muted">
@@ -300,7 +351,10 @@ export default function AccountDetailPage() {
       <div className="mb-4 card">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-medium text-fg">Recent Outbox</div>
-          <Link to={`/outbox?account=${accountId}`} className="text-xs text-accent hover:underline">
+          <Link
+            to={`/outbox?account=${accountId}`}
+            className="text-xs text-accent hover:underline"
+          >
             View all in Outbox
           </Link>
         </div>
@@ -310,8 +364,13 @@ export default function AccountDetailPage() {
         {outbox && outbox.length > 0 && (
           <ul className="flex flex-col gap-2 text-sm">
             {outbox.map((item) => (
-              <li key={item.id} className="flex items-center justify-between border-t border-ink-600 pt-2">
-                <span className="text-fg">{item.payload.subject || "(no subject)"}</span>
+              <li
+                key={item.id}
+                className="flex items-center justify-between border-t border-ink-600 pt-2"
+              >
+                <span className="text-fg">
+                  {item.payload.subject || "(no subject)"}
+                </span>
                 <span className="flex items-center gap-2 text-xs text-fg-muted">
                   <span className="chip">{item.status}</span>
                   {fullDate(item.sent_at ?? item.created_at)}
@@ -325,9 +384,15 @@ export default function AccountDetailPage() {
       <div className="card border-danger/40">
         <div className="mb-2 text-sm font-medium text-danger">Danger zone</div>
         <p className="mb-3 text-sm text-fg-muted">
-          Deleting an account stops syncing and permanently removes related data.
+          Deleting an account stops syncing and permanently removes related
+          data.
         </p>
-        <button type="button" className="btn btn-danger" disabled={deleting} onClick={() => void handleDelete()}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={deleting}
+          onClick={() => void handleDelete()}
+        >
           {deleting ? "Deleting…" : "Delete account"}
         </button>
       </div>

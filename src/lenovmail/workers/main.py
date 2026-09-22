@@ -20,6 +20,7 @@ from .tasks import (
     ensure_idle_watchers,
     idle_watch,
     janitor_sweep,
+    mine_values_backfill,
     sync_account,
     sync_all_accounts,
 )
@@ -54,12 +55,16 @@ class WorkerSettings:
         ensure_idle_watchers,
         deliver_outbox,
         janitor_sweep,
+        mine_values_backfill,
     ]
     cron_jobs = [
         cron(sync_all_accounts, second={0, 30}, run_at_startup=True),
         cron(ensure_idle_watchers, minute=set(range(0, 60, 5))),
         # Hourly, off the top of the hour so it never queues behind the sync fan-out.
         cron(janitor_sweep, minute={17}),
+        # Every ten minutes: only messages ingested before the extractor existed qualify,
+        # so this drains to nothing and then costs one indexed lookup per run.
+        cron(mine_values_backfill, minute=set(range(0, 60, 10))),
     ]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     max_jobs = settings.worker_max_jobs

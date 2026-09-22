@@ -54,6 +54,11 @@ export interface Account {
   last_sync_at: string | null;
   unread: number;
   total: number;
+  invalid_since: string | null;
+  /** When the janitor would retire this account (auth_error only). */
+  retire_at: string | null;
+  retire_action: string | null;
+  retire_warning: boolean;
   oauth_url: string | null;
 }
 
@@ -116,6 +121,7 @@ export interface Message {
   seen: boolean;
   flagged: boolean;
   folder_ids: UUID[];
+  value_kinds: string[];
 }
 
 export interface MessagePage {
@@ -146,8 +152,30 @@ export interface MessageQuery {
   flagged?: boolean;
   has_attachments?: boolean;
   thread_id?: UUID;
+  value_kind?: string[];
   limit?: number;
   cursor?: string | null;
+}
+
+/** `GET /api/messages`: same filters minus the per-account ones, plus an account narrowing. */
+export interface GlobalMessageQuery {
+  account_id?: UUID[];
+  q?: string;
+  unread?: boolean;
+  flagged?: boolean;
+  has_attachments?: boolean;
+  value_kind?: string[];
+  limit?: number;
+  cursor?: string | null;
+}
+
+export interface MessageValue {
+  id: UUID;
+  kind: string;
+  /** Masked unless the caller asked for a reveal. */
+  value: string;
+  confidence: number;
+  revealed: boolean;
 }
 
 export interface Thread {
@@ -224,6 +252,75 @@ export interface AgentAuditEntry {
   created_at: string;
 }
 
+export interface AuditQuery {
+  tool?: string;
+  outcome?: string;
+  token_id?: UUID;
+  before_id?: number;
+  limit?: number;
+}
+
+export interface SessionInfo {
+  id: string;
+  created_at: string;
+  last_seen_at: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  /** True for the session making the request. */
+  current: boolean;
+}
+
+export interface ProviderStats {
+  provider: string;
+  accounts_total: number;
+  accounts_active: number;
+  accounts_unreachable: number;
+  accounts_auth_rejected: number;
+  accounts_disabled: number;
+  messages: number;
+  retire_warnings: number;
+}
+
+export interface Overview {
+  accounts_total: number;
+  accounts_active: number;
+  accounts_unreachable: number;
+  accounts_auth_rejected: number;
+  accounts_disabled: number;
+  messages_total: number;
+  unread_total: number;
+  providers: ProviderStats[];
+}
+
+export interface ProviderOps {
+  provider: string;
+  accounts_total: number;
+  sync_runs_24h: number;
+  sync_failures_24h: number;
+  sent_last_hour: number;
+  send_limit_per_hour: number;
+  max_connections_per_account: number | null;
+  poll_interval_s: number | null;
+}
+
+export interface Janitor {
+  grace_days: number;
+  action: string;
+  check_batch: number;
+  token_retention_days: number;
+  audit_retention_days: number;
+  next_retire_at: string | null;
+}
+
+export interface OpsSummary {
+  /** `status == "error"` — the server did not answer; still in the sync rotation. */
+  unreachable: Account[];
+  /** `status == "auth_error"` — credentials refused; needs a human. */
+  auth_rejected: Account[];
+  janitor: Janitor;
+  providers: ProviderOps[];
+}
+
 /** SSE event from `GET /api/events` (see `sync/events.py`). */
 export type EventType =
   | "message.new"
@@ -244,3 +341,13 @@ export const AGENT_SCOPES = [
   "mail.delete",
   "mail.manage",
 ] as const;
+
+/** Mirrors `VALUE_KINDS` in `src/lenovmail/sync/mining.py`. */
+export const VALUE_KINDS = ["otp", "reset_link", "key", "promo"] as const;
+
+export const VALUE_KIND_LABEL: Record<string, string> = {
+  otp: "code",
+  reset_link: "reset link",
+  key: "key",
+  promo: "promo",
+};

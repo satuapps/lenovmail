@@ -1,5 +1,12 @@
 // Lenovmail — authored by satuapps (satuapps.com)
-import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { BrowserRouter } from "react-router-dom";
 import { EventsProvider, useStreamStatus } from "./events";
 import { SessionProvider, useSession } from "./session";
@@ -11,11 +18,17 @@ import AddAccountWizard from "./features/accounts/AddAccountWizard";
 import AgentTokensPage from "./features/accounts/AgentTokensPage";
 import MailPage from "./features/mail/MailPage";
 import OutboxPage from "./features/mail/OutboxPage";
+import DashboardPage from "./features/dashboard/DashboardPage";
+import OpsPage from "./features/ops/OpsPage";
+import SecurityPage from "./features/security/SecurityPage";
 
 const NAV = [
+  { to: "/dashboard", label: "Dashboard" },
   { to: "/mail", label: "Mail" },
   { to: "/accounts", label: "Accounts" },
   { to: "/outbox", label: "Outbox" },
+  { to: "/ops", label: "Ops" },
+  { to: "/security", label: "Security" },
   { to: "/agent", label: "Agent Tokens" },
 ];
 
@@ -32,7 +45,11 @@ function Shell() {
   const streamStatus = useStreamStatus();
 
   if (loading) {
-    return <div className="grid h-full place-items-center text-fg-muted">Loading…</div>;
+    return (
+      <div className="grid h-full place-items-center text-fg-muted">
+        Loading…
+      </div>
+    );
   }
   if (user === null) return <Navigate to="/login" replace />;
 
@@ -61,7 +78,9 @@ function Shell() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "nav-link-active" : ""}`
+              }
             >
               {item.label}
             </NavLink>
@@ -69,13 +88,23 @@ function Shell() {
         </nav>
         <div className="ml-auto flex items-center gap-3">
           <span
-            className={streamStatus === "open" ? "chip chip-ok" : "chip chip-warn"}
+            className={
+              streamStatus === "open" ? "chip chip-ok" : "chip chip-warn"
+            }
             title="Realtime event stream from the server"
           >
-            <span className={streamStatus === "open" ? "led led-ok" : "led led-warn"} aria-hidden />
+            <span
+              className={
+                streamStatus === "open" ? "led led-ok" : "led led-warn"
+              }
+              aria-hidden
+            />
             {STATUS_LABEL[streamStatus]}
           </span>
-          <NavLink to="/password" className="mono text-xs text-fg-muted hover:text-fg">
+          <NavLink
+            to="/password"
+            className="mono text-xs text-fg-muted hover:text-fg"
+          >
             {user.email}
           </NavLink>
           <button
@@ -94,16 +123,24 @@ function Shell() {
       </header>
       <main className="hud-grid min-h-0 flex-1">
         <Routes>
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/mail" element={<MailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/new" element={<AddAccountWizard />} />
           <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
           <Route path="/outbox" element={<OutboxPage />} />
           <Route path="/agent" element={<AgentTokensPage />} />
+          <Route path="/ops" element={<OpsPage />} />
+          <Route path="/security" element={<SecurityPage />} />
           <Route path="/password" element={<PasswordPage />} />
           <Route
             path="*"
-            element={<Navigate to={{ pathname: "/mail", search: location.search }} replace />}
+            element={
+              <Navigate
+                to={{ pathname: "/dashboard", search: location.search }}
+                replace
+              />
+            }
           />
         </Routes>
       </main>
@@ -113,8 +150,13 @@ function Shell() {
 
 function LoginRoute() {
   const { user, loading } = useSession();
-  if (loading) return <div className="grid h-full place-items-center text-fg-muted">Loading…</div>;
-  if (user !== null) return <Navigate to="/mail" replace />;
+  if (loading)
+    return (
+      <div className="grid h-full place-items-center text-fg-muted">
+        Loading…
+      </div>
+    );
+  if (user !== null) return <Navigate to="/dashboard" replace />;
   return <LoginPage />;
 }
 

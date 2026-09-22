@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Message } from "../../types";
+import { VALUE_KIND_LABEL, VALUE_KINDS } from "../../types";
 import { senderLabel, shortDate } from "../../format";
 
 const ROW_HEIGHT = 64;
@@ -24,6 +25,11 @@ interface MessageListPaneProps {
   onToggleFlagged: () => void;
   attachmentsOnly: boolean;
   onToggleAttachments: () => void;
+  /** Mined-value kinds currently filtered on. */
+  valueKinds: string[];
+  onToggleValueKind: (kind: string) => void;
+  /** Account id → address, set only in the all-accounts scope so rows can say where mail came from. */
+  accountLabels: Record<string, string> | null;
   updateBanner: string | null;
   onDismissUpdateBanner: () => void;
   onRefresh: () => void;
@@ -46,6 +52,9 @@ export default function MessageListPane({
   onToggleFlagged,
   attachmentsOnly,
   onToggleAttachments,
+  valueKinds,
+  onToggleValueKind,
+  accountLabels,
   updateBanner,
   onDismissUpdateBanner,
   onRefresh,
@@ -102,6 +111,18 @@ export default function MessageListPane({
             Has attachments
           </button>
         </div>
+        <div className="flex flex-wrap gap-1.5">
+          {VALUE_KINDS.map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              className={`chip ${valueKinds.includes(kind) ? "chip-active" : ""}`}
+              onClick={() => onToggleValueKind(kind)}
+            >
+              {VALUE_KIND_LABEL[kind] ?? kind}
+            </button>
+          ))}
+        </div>
       </div>
 
       {updateBanner !== null && (
@@ -111,24 +132,36 @@ export default function MessageListPane({
             <button type="button" className="underline" onClick={onRefresh}>
               Refresh
             </button>
-            <button type="button" className="text-fg-dim" onClick={onDismissUpdateBanner}>
+            <button
+              type="button"
+              className="text-fg-dim"
+              onClick={onDismissUpdateBanner}
+            >
               ×
             </button>
           </div>
         </div>
       )}
 
-      {error !== null && <p className="border-b border-ink-600 px-3 py-2 text-xs text-danger">{error}</p>}
+      {error !== null && (
+        <p className="border-b border-ink-600 px-3 py-2 text-xs text-danger">
+          {error}
+        </p>
+      )}
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         {loading && items.length === 0 && (
-          <p className="p-4 text-center text-sm text-fg-muted">Loading messages…</p>
+          <p className="p-4 text-center text-sm text-fg-muted">
+            Loading messages…
+          </p>
         )}
         {!loading && items.length === 0 && (
           <p className="p-4 text-center text-sm text-fg-muted">No messages.</p>
         )}
         {items.length > 0 && (
-          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          <div
+            style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+          >
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const message = items[virtualRow.index];
               if (message === undefined) return null;
@@ -156,10 +189,16 @@ export default function MessageListPane({
                         message.seen ? "text-fg-muted" : "font-semibold text-fg"
                       }`}
                     >
-                      {!message.seen && <span className="led led-accent" aria-hidden />}
-                      <span className="truncate">{senderLabel(message.from_name, message.from_addr)}</span>
+                      {!message.seen && (
+                        <span className="led led-accent" aria-hidden />
+                      )}
+                      <span className="truncate">
+                        {senderLabel(message.from_name, message.from_addr)}
+                      </span>
                     </span>
-                    <span className="mono shrink-0 text-[11px] text-fg-dim">{shortDate(message.internal_date)}</span>
+                    <span className="mono shrink-0 text-[11px] text-fg-dim">
+                      {shortDate(message.internal_date)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
@@ -173,18 +212,41 @@ export default function MessageListPane({
                       </span>
                     )}
                     {message.has_attachments && (
-                      <span className="shrink-0 text-fg-dim" aria-label="has attachments">
+                      <span
+                        className="shrink-0 text-fg-dim"
+                        aria-label="has attachments"
+                      >
                         {"\u{1F4CE}"}
                       </span>
                     )}
+                    {message.value_kinds.map((kind) => (
+                      <span
+                        key={kind}
+                        className="chip shrink-0 px-1.5 py-0 text-[10px] text-accent"
+                        title="Mined from this message"
+                      >
+                        {VALUE_KIND_LABEL[kind] ?? kind}
+                      </span>
+                    ))}
                   </div>
-                  <span className="truncate text-xs leading-tight text-fg-dim">{message.snippet}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {accountLabels && (
+                      <span className="chip shrink-0 px-1.5 py-0 text-[10px]">
+                        {accountLabels[message.account_id] ?? "unknown"}
+                      </span>
+                    )}
+                    <span className="truncate text-xs leading-tight text-fg-dim">
+                      {message.snippet}
+                    </span>
+                  </span>
                 </button>
               );
             })}
           </div>
         )}
-        {loadingMore && <p className="p-2 text-center text-xs text-fg-dim">Loading more…</p>}
+        {loadingMore && (
+          <p className="p-2 text-center text-xs text-fg-dim">Loading more…</p>
+        )}
       </div>
     </section>
   );

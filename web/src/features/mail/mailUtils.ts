@@ -23,27 +23,39 @@ export function resolveInlineCids(
   let result = html;
   for (const att of attachments) {
     if (!att.is_inline || !att.content_id) continue;
-    const cid = att.content_id.replace(/^<|>$/g, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const cid = att.content_id
+      .replace(/^<|>$/g, "")
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const url = attachmentUrl(messageId, att.id);
     const pattern = new RegExp(`(src|href)=("|')cid:${cid}\\2`, "gi");
-    result = result.replace(pattern, (_match, attr: string, quote: string) => `${attr}=${quote}${url}${quote}`);
+    result = result.replace(
+      pattern,
+      (_match, attr: string, quote: string) => `${attr}=${quote}${url}${quote}`,
+    );
   }
   return result;
 }
 
 /** Wrap sanitized message HTML into a full document with a CSP `img-src`. */
-export function buildReadingSrcDoc(bodyHtml: string, allowRemoteImages: boolean): string {
-  const csp = allowRemoteImages ? "img-src data: https: http: 'self';" : "img-src data: 'self';";
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}">` +
+export function buildReadingSrcDoc(
+  bodyHtml: string,
+  allowRemoteImages: boolean,
+): string {
+  const csp = allowRemoteImages
+    ? "img-src data: https: http: 'self';"
+    : "img-src data: 'self';";
+  return (
+    `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}">` +
     `<style>body{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;color:#0b0f14;background:#fff;` +
     `margin:0;padding:12px;word-wrap:break-word;} img{max-width:100%;} a{color:#3d84f7;}</style></head>` +
-    `<body>${bodyHtml}</body></html>`;
+    `<body>${bodyHtml}</body></html>`
+  );
 }
 
 /** Read the `Message-ID:` header from a raw RFC822 source (used for In-Reply-To/References). */
 export function extractMessageIdHeader(rawSource: string): string | null {
   const match = /^message-id:\s*(<[^>]+>)/im.exec(rawSource);
-  return match ? match[1] ?? null : null;
+  return match ? (match[1] ?? null) : null;
 }
 
 const FOLDER_ROLE_ICON: Record<string, string> = {
@@ -81,10 +93,34 @@ export function syncStateDotClass(state: string): string {
   return "bg-ok";
 }
 
+/**
+ * `error` and `auth_error` are different problems: `error` means the server could not be
+ * reached and the next sync may well succeed, `auth_error` means the server rejected the
+ * credentials and a human has to re-authenticate. They get different colors accordingly.
+ */
 export function accountStatusChipClass(status: string): string {
   if (status === "active") return "chip chip-ok";
-  if (status === "auth_error" || status === "error") return "chip chip-danger";
-  return "chip chip-warn";
+  if (status === "auth_error") return "chip chip-danger";
+  if (status === "error") return "chip chip-warn";
+  return "chip";
+}
+
+export const ACCOUNT_STATUS_LABEL: Record<string, string> = {
+  active: "active",
+  auth_error: "auth reject",
+  error: "unreachable",
+  disabled: "disconnected",
+};
+
+/** Sentinel account id for the "All accounts" scope in the mail page URL. */
+export const ALL_ACCOUNTS = "all";
+
+/** Whole days from now until `iso`, floored at 0; `null` when there is no date. */
+export function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const at = Date.parse(iso);
+  if (Number.isNaN(at)) return null;
+  return Math.max(0, Math.ceil((at - Date.now()) / 86_400_000));
 }
 
 export function outboxStatusChipClass(status: string): string {
@@ -114,7 +150,9 @@ export const OUTBOX_STATUS_LABEL: Record<string, string> = {
 /** Strip repeated "Re:"/"Fwd:" prefixes (including localized variants) before adding a new one.
  *  Keep in sync with `_REPLY_PREFIX` in src/lenovmail/sync/normalize.py. */
 export function stripSubjectPrefix(subject: string): string {
-  return subject.replace(/^((re|fw|fwd|aw|sv|vs|antw|bls|balas)\s*(\[\d+\])?:\s*)+/i, "").trim();
+  return subject
+    .replace(/^((re|fw|fwd|aw|sv|vs|antw|bls|balas)\s*(\[\d+\])?:\s*)+/i, "")
+    .trim();
 }
 
 export function base64FromDataUrl(dataUrl: string): string {

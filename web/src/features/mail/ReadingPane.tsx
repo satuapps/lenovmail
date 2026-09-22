@@ -1,11 +1,17 @@
 // Lenovmail — authored by satuapps (satuapps.com)
 // MailPage right panel: header, action toolbar, message body (sanitized HTML / plain text), and attachments.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
-import { api } from "../../api";
-import type { Attachment, Folder, Message } from "../../types";
+import { api, ApiError } from "../../api";
+import type { Attachment, Folder, Message, MessageValue } from "../../types";
+import { VALUE_KIND_LABEL } from "../../types";
 import { formatBytes, fullDate, senderLabel } from "../../format";
-import { buildReadingSrcDoc, extractMessageIdHeader, resolveInlineCids, stripSubjectPrefix } from "./mailUtils";
+import {
+  buildReadingSrcDoc,
+  extractMessageIdHeader,
+  resolveInlineCids,
+  stripSubjectPrefix,
+} from "./mailUtils";
 import type { ComposeInitial } from "./ComposeModal";
 
 interface MessageDetail {
@@ -32,16 +38,102 @@ interface ReadingPaneProps {
   onCompose: (initial: ComposeInitial) => void;
 }
 
-async function fetchOriginalMessageId(messageId: string): Promise<string | null> {
-  const response = await fetch(api.rawUrl(messageId), { credentials: "include" });
+async function fetchOriginalMessageId(
+  messageId: string,
+): Promise<string | null> {
+  const response = await fetch(api.rawUrl(messageId), {
+    credentials: "include",
+  });
   if (!response.ok) return null;
   const text = await response.text();
   return extractMessageIdHeader(text);
 }
 
 function quoteText(prefixLine: string, body: string | null): string {
-  const quoted = (body ?? "").split("\n").map((line) => `> ${line}`).join("\n");
+  const quoted = (body ?? "")
+    .split("\n")
+    .map((line) => `> ${line}`)
+    .join("\n");
   return `\n\n${prefixLine}\n${quoted}`;
+}
+
+/**
+ * Values mined from this message, masked by default. Revealing re-fetches with `reveal=true`,
+ * which the server records in the audit trail — hence the notice after a reveal.
+ *
+ * Mounted with `key={message.id}` so switching messages resets the revealed state.
+ */
+function MinedValues({ messageId }: { messageId: string }) {
+  const [values, setValues] = useState<MessageValue[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [revealing, setRevealing] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .messageValues(messageId)
+      .then((rows) => {
+        if (!cancelled) setValues(rows);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setError(
+            err instanceof ApiError ? err.message : "Failed to load values.",
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [messageId]);
+
+  async function reveal() {
+    setRevealing(true);
+    try {
+      setValues(await api.messageValues(messageId, true));
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Failed to reveal values.",
+      );
+    } finally {
+      setRevealing(false);
+    }
+  }
+
+  if (error !== null)
+    return <p className="px-4 py-2 text-xs text-danger">{error}</p>;
+  if (values === null || values.length === 0) return null;
+  const revealed = values.some((item) => item.revealed);
+
+  return (
+    <div className="border-b border-ink-600 bg-ink-800 px-4 py-2">
+      <div className="flex items-center gap-2">
+        <span className="label mb-0">Mined values</span>
+        {revealed ? (
+          <span className="chip chip-warn">revealed — recorded in audit</span>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={revealing}
+            onClick={() => void reveal()}
+          >
+            {revealing ? "Revealing…" : "Reveal"}
+          </button>
+        )}
+      </div>
+      <ul className="mt-1 space-y-1">
+        {values.map((item) => (
+          <li key={item.id} className="flex items-center gap-2 text-xs">
+            <span className="chip shrink-0">
+              {VALUE_KIND_LABEL[item.kind] ?? item.kind}
+            </span>
+            <span className="mono truncate text-fg">{item.value}</span>
+            <span className="shrink-0 text-fg-dim">{item.confidence}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export default function ReadingPane({
@@ -56,8 +148,18 @@ export default function ReadingPane({
 }: ReadingPaneProps) {
   const [allowRemoteImages, setAllowRemoteImages] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
-  const { message, bodyText, bodyHtml, bodyState, attachments, loading, error, polling, startPolling, stopPolling } =
-    detail;
+  const {
+    message,
+    bodyText,
+    bodyHtml,
+    bodyState,
+    attachments,
+    loading,
+    error,
+    polling,
+    startPolling,
+    stopPolling,
+  } = detail;
 
   const srcDoc = useMemo(() => {
     if (bodyHtml === null || message === null) return null;
@@ -65,7 +167,12 @@ export default function ReadingPane({
       FORBID_TAGS: ["script", "style", "form", "iframe", "object", "embed"],
       FORBID_ATTR: ["onerror", "onload", "onclick"],
     });
-    const resolved = resolveInlineCids(sanitized, message.id, attachments, api.attachmentUrl);
+    const resolved = resolveInlineCids(
+      sanitized,
+      message.id,
+      attachments,
+      api.attachmentUrl,
+    );
     return buildReadingSrcDoc(resolved, allowRemoteImages);
   }, [bodyHtml, message, attachments, allowRemoteImages]);
 
@@ -106,7 +213,11 @@ export default function ReadingPane({
       const to = message.from_addr ? [message.from_addr] : [];
       if (mode === "replyAll") {
         for (const recipient of message.to) {
-          if (recipient.addr && recipient.addr.toLowerCase() !== fromAddress.toLowerCase() && !to.includes(recipient.addr)) {
+          if (
+            recipient.addr &&
+            recipient.addr.toLowerCase() !== fromAddress.toLowerCase() &&
+            !to.includes(recipient.addr)
+          ) {
             to.push(recipient.addr);
           }
         }
@@ -123,17 +234,25 @@ export default function ReadingPane({
         inReplyTo,
         references,
       });
-    })().catch(() => setComposeError("Failed to fetch Message-ID header for the reply."));
+    })().catch(() =>
+      setComposeError("Failed to fetch Message-ID header for the reply."),
+    );
   };
 
-  const otherFolders = folders.filter((folder) => !message.folder_ids.includes(folder.id));
+  const otherFolders = folders.filter(
+    (folder) => !message.folder_ids.includes(folder.id),
+  );
 
   return (
     <section className="flex h-full min-h-0 flex-1 flex-col">
       <header className="space-y-2 border-b border-ink-600 p-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-lg font-semibold text-fg">{message.subject || "(no subject)"}</h1>
-          <span className="chip shrink-0">{bodyState ?? message.body_state}</span>
+          <h1 className="text-lg font-semibold text-fg">
+            {message.subject || "(no subject)"}
+          </h1>
+          <span className="chip shrink-0">
+            {bodyState ?? message.body_state}
+          </span>
         </div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           <dt className="mono uppercase tracking-[0.14em] text-fg-dim">From</dt>
@@ -144,13 +263,19 @@ export default function ReadingPane({
           <dt className="mono uppercase tracking-[0.14em] text-fg-dim">To</dt>
           <dd className="truncate text-fg-muted">
             {message.to
-              .map((addr) => (addr.name ? `${addr.name} <${addr.addr}>` : addr.addr))
+              .map((addr) =>
+                addr.name ? `${addr.name} <${addr.addr}>` : addr.addr,
+              )
               .join(", ") || "—"}
           </dd>
           <dt className="mono uppercase tracking-[0.14em] text-fg-dim">Date</dt>
           <dd className="mono text-fg-muted">{fullDate(message.sent_date)}</dd>
         </dl>
       </header>
+
+      {message.value_kinds.length > 0 && (
+        <MinedValues key={message.id} messageId={message.id} />
+      )}
 
       <div className="flex flex-wrap items-center gap-1.5 border-b border-ink-600 px-4 py-2">
         <button
@@ -184,26 +309,50 @@ export default function ReadingPane({
             </option>
           ))}
         </select>
-        <button type="button" className="btn btn-danger" disabled={busy} onClick={onDelete}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={busy}
+          onClick={onDelete}
+        >
           Delete
         </button>
-        <a className="btn btn-ghost" href={api.rawUrl(message.id)} target="_blank" rel="noreferrer">
+        <a
+          className="btn btn-ghost"
+          href={api.rawUrl(message.id)}
+          target="_blank"
+          rel="noreferrer"
+        >
           View Raw
         </a>
         <span className="ml-auto flex items-center gap-1.5">
-          <button type="button" className="btn btn-primary" onClick={() => startCompose("reply")}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => startCompose("reply")}
+          >
             Reply
           </button>
-          <button type="button" className="btn" onClick={() => startCompose("replyAll")}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => startCompose("replyAll")}
+          >
             Reply All
           </button>
-          <button type="button" className="btn" onClick={() => startCompose("forward")}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => startCompose("forward")}
+          >
             Forward
           </button>
         </span>
       </div>
 
-      {composeError !== null && <p className="px-4 pt-2 text-xs text-danger">{composeError}</p>}
+      {composeError !== null && (
+        <p className="px-4 pt-2 text-xs text-danger">{composeError}</p>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {error !== null && <p className="p-4 text-sm text-danger">{error}</p>}
@@ -212,13 +361,21 @@ export default function ReadingPane({
           <div className="flex items-center gap-2 border-b border-ink-600 bg-ink-800 px-4 py-2 text-xs text-fg-muted">
             <span>Message body incomplete ({bodyState ?? "none"}).</span>
             {!polling ? (
-              <button type="button" className="btn btn-ghost" onClick={startPolling}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={startPolling}
+              >
                 Load content
               </button>
             ) : (
               <>
                 <span>Loading…</span>
-                <button type="button" className="btn btn-ghost" onClick={stopPolling}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={stopPolling}
+                >
                   Stop
                 </button>
               </>
@@ -228,7 +385,11 @@ export default function ReadingPane({
 
         {srcDoc !== null && (
           <div className="border-b border-ink-600 px-4 py-1.5">
-            <button type="button" className="text-xs text-accent underline" onClick={() => setAllowRemoteImages((v) => !v)}>
+            <button
+              type="button"
+              className="text-xs text-accent underline"
+              onClick={() => setAllowRemoteImages((v) => !v)}
+            >
               {allowRemoteImages ? "Hide remote images" : "Show images"}
             </button>
           </div>
@@ -242,7 +403,9 @@ export default function ReadingPane({
             className="h-full min-h-[300px] w-full bg-white"
           />
         ) : bodyText !== null ? (
-          <pre className="whitespace-pre-wrap p-4 text-sm text-fg">{bodyText}</pre>
+          <pre className="whitespace-pre-wrap p-4 text-sm text-fg">
+            {bodyText}
+          </pre>
         ) : (
           <p className="p-4 text-sm text-fg-dim">No content to display.</p>
         )}
@@ -252,8 +415,13 @@ export default function ReadingPane({
             <h2 className="label">Attachments</h2>
             <ul className="mt-1 space-y-1">
               {attachments.map((att) => (
-                <li key={att.id} className="flex items-center justify-between text-sm">
-                  <span className="truncate text-fg">{att.filename || "(no filename)"}</span>
+                <li
+                  key={att.id}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="truncate text-fg">
+                    {att.filename || "(no filename)"}
+                  </span>
                   <span className="ml-2 flex items-center gap-2 text-xs text-fg-dim">
                     <span className="mono">{formatBytes(att.size_bytes)}</span>
                     <a

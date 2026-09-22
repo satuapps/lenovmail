@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     body_fetch_chunk: int = 25
     body_full_fetch_max_bytes: int = 26_214_400
     body_backfill_max_per_run: int = 500
+    mining_backfill_max_per_run: int = 500
     graph_body_concurrency: int = 6
     flag_refresh_every: int = 6
 

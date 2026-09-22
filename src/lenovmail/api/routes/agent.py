@@ -22,6 +22,9 @@ from ..schemas import AgentAuditOut, AgentTokenCreate, AgentTokenCreated, AgentT
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
+# Mirrors the `agent_audit_outcome_check` constraint.
+AUDIT_OUTCOMES = frozenset({"ok", "denied", "error"})
+
 
 @router.get("/tokens", response_model=list[AgentTokenOut])
 async def list_tokens(principal: PrincipalDep, session: SessionDep) -> list[AgentTokenOut]:
@@ -106,13 +109,27 @@ async def list_audit(
     principal: PrincipalDep,
     session: SessionDep,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    tool: str | None = None,
+    outcome: str | None = None,
+    token_id: uuid.UUID | None = None,
+    before_id: int | None = None,
 ) -> list[AgentAuditOut]:
-    rows = (
-        await session.execute(
-            select(AgentAudit)
-            .where(AgentAudit.user_id == principal.user_id)
-            .order_by(AgentAudit.created_at.desc())
-            .limit(limit)
-        )
-    ).scalars()
+    """Audit trail for the caller, newest first.
+
+    Paged on `id` rather than `created_at`: the column is monotonic with insertion here,
+    so a total key means "load more" cannot skip or repeat a row when several calls land
+    in the same instant.
+    """
+    if outcome is not None and outcome not in AUDIT_OUTCOMES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="unknown outcome")
+    query = select(AgentAudit).where(AgentAudit.user_id == principal.user_id)
+    if tool:
+        query = query.where(AgentAudit.tool.ilike(f"%{tool}%"))
+    if outcome is not None:
+        query = query.where(AgentAudit.outcome == outcome)
+    if token_id is not None:
+        query = query.where(AgentAudit.token_id == token_id)
+    if before_id is not None:
+        query = query.where(AgentAudit.id < before_id)
+    rows = (await session.execute(query.order_by(AgentAudit.id.desc()).limit(limit))).scalars()
     return [AgentAuditOut.model_validate(row) for row in rows]

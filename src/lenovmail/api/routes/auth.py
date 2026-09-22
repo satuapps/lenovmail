@@ -1,5 +1,7 @@
 # Lenovmail — authored by satuapps (satuapps.com)
-"""Browser session login: argon2, HttpOnly cookie, and failed-attempt rate limiting."""
+"""Browser session login: argon2, HttpOnly cookie, failed-attempt rate limiting, and the
+session list a user can revoke from.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +13,7 @@ from ...models import User
 from ...redis_helpers import resolved
 from .. import security
 from ..deps import PrincipalDep, RedisDep, SessionDep
-from ..schemas import LoginRequest, PasswordChange, UserOut
+from ..schemas import LoginRequest, PasswordChange, SessionOut, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -31,9 +33,17 @@ def _set_session_cookie(response: Response, token: str) -> None:
     )
 
 
+def _client_ip(request: Request) -> str | None:
+    return request.client.host if request.client else None
+
+
 @router.post("/login", response_model=UserOut)
 async def login(
-    body: LoginRequest, response: Response, session: SessionDep, redis: RedisDep
+    body: LoginRequest,
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    redis: RedisDep,
 ) -> UserOut:
     email = body.email.strip().lower()
     fail_key = f"login:fail:{email}"
@@ -64,7 +74,13 @@ async def login(
         await session.commit()
 
     token = security.new_session_token()
-    await security.store_session(redis, user.id, token)
+    await security.store_session(
+        redis,
+        user.id,
+        token,
+        ip=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
     _set_session_cookie(response, token)
     return UserOut.model_validate(user)
 
@@ -85,9 +101,46 @@ async def me(principal: PrincipalDep) -> UserOut:
     return UserOut.model_validate(principal.user)
 
 
+@router.get("/sessions", response_model=list[SessionOut])
+async def list_sessions(
+    request: Request, redis: RedisDep, principal: PrincipalDep
+) -> list[SessionOut]:
+    """Every live browser session for the caller, newest first.
+
+    Agent tokens are listed and revoked under `/api/agent/tokens`; this route is about the
+    cookie sessions, so it refuses a token caller rather than returning an empty list.
+    """
+    if principal.is_agent:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="browser session required")
+    cookie = request.cookies.get(security.SESSION_COOKIE)
+    current_id = security.session_public_id(cookie) if cookie else None
+    rows = await security.list_sessions(redis, principal.user_id)
+    return [
+        SessionOut(
+            id=str(row["id"]),
+            created_at=row["created_at"],  # type: ignore[arg-type]
+            last_seen_at=row["last_seen_at"],  # type: ignore[arg-type]
+            ip=row["ip"],  # type: ignore[arg-type]
+            user_agent=row["user_agent"],  # type: ignore[arg-type]
+            current=row["id"] == current_id,
+        )
+        for row in rows
+    ]
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_session(session_id: str, redis: RedisDep, principal: PrincipalDep) -> None:
+    """Revoke one session. Revoking the caller's own signs this browser out on its next call."""
+    if principal.is_agent:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="browser session required")
+    if not await security.revoke_session(redis, principal.user_id, session_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="session not found")
+
+
 @router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(
     body: PasswordChange,
+    request: Request,
     response: Response,
     session: SessionDep,
     redis: RedisDep,
@@ -102,5 +155,11 @@ async def change_password(
     await session.commit()
     await security.drop_user_sessions(redis, user.id)
     token = security.new_session_token()
-    await security.store_session(redis, user.id, token)
+    await security.store_session(
+        redis,
+        user.id,
+        token,
+        ip=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
     _set_session_cookie(response, token)

@@ -9,11 +9,23 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import Account, Attachment, Folder, MailboxMessage, Message, MessageBody, Thread
+from ..config import settings
+from ..models import (
+    Account,
+    Attachment,
+    Folder,
+    MailboxMessage,
+    Message,
+    MessageBody,
+    MessageValue,
+    Thread,
+)
+from ..sync.mining import VALUE_KINDS
 from .schemas import (
     AccountOut,
     AddressOut,
@@ -23,6 +35,9 @@ from .schemas import (
     MessageOut,
     ThreadOut,
 )
+
+# How long before the janitor retires an account the GUI starts warning about it.
+RETIRE_WARN_DAYS = 3
 
 
 async def folder_counts(
@@ -75,10 +90,49 @@ async def accounts_out(session: AsyncSession, accounts: Sequence[Account]) -> li
                 .where(Folder.account_id == account.id, Folder.role == "inbox")
             )
         ).one()
-        item = AccountOut.model_validate(account)
+        item = account_out(account)
         item.total, item.unread = counts[0], counts[1]
         out.append(item)
     return out
+
+
+def account_out(account: Account) -> AccountOut:
+    """One account row, including when the janitor would retire it.
+
+    `maintenance.sweep_accounts` stamps `invalid_since` on the first confirmed credential
+    rejection and retires the account once the grace period is up, so the deadline is
+    derivable here instead of being stored.
+    """
+    item = AccountOut.model_validate(account)
+    if account.status == "auth_error" and account.invalid_since is not None:
+        retire_at = account.invalid_since + timedelta(days=settings.janitor_account_grace_days)
+        item.retire_at = retire_at
+        item.retire_action = settings.janitor_account_action
+        item.retire_warning = retire_at - datetime.now(UTC) <= timedelta(days=RETIRE_WARN_DAYS)
+    return item
+
+
+async def message_value_kinds(
+    session: AsyncSession, message_ids: Iterable[uuid.UUID]
+) -> dict[uuid.UUID, list[str]]:
+    """`message_id -> mined value kinds`, batched for one page of messages."""
+    ids = list(dict.fromkeys(message_ids))
+    if not ids:
+        return {}
+    rows = (
+        await session.execute(
+            select(MessageValue.message_id, MessageValue.kind)
+            .where(MessageValue.message_id.in_(ids))
+            .distinct()
+        )
+    ).all()
+    grouped: dict[uuid.UUID, set[str]] = {}
+    for message_id, kind in rows:
+        grouped.setdefault(message_id, set()).add(kind)
+    return {
+        message_id: [kind for kind in VALUE_KINDS if kind in kinds]
+        for message_id, kinds in grouped.items()
+    }
 
 
 async def message_flags(
@@ -126,11 +180,16 @@ def addresses(value: object) -> list[AddressOut]:
     return out
 
 
-def message_out(row: Message, flags: tuple[bool, bool, list[uuid.UUID]] | None) -> MessageOut:
+def message_out(
+    row: Message,
+    flags: tuple[bool, bool, list[uuid.UUID]] | None,
+    value_kinds: list[str] | None = None,
+) -> MessageOut:
     seen, flagged, folder_ids = flags if flags else (False, False, [])
     item = MessageOut.model_validate(row)
     item.to = addresses(row.to_addrs)
     item.seen, item.flagged, item.folder_ids = seen, flagged, folder_ids
+    item.value_kinds = value_kinds or []
     return item
 
 
@@ -168,10 +227,12 @@ async def thread_out(session: AsyncSession, thread: Thread) -> ThreadOut:
         .unique()
         .all()
     )
-    flags = await message_flags(session, [row.id for row in rows])
+    ids = [row.id for row in rows]
+    flags = await message_flags(session, ids)
+    kinds = await message_value_kinds(session, ids)
     return ThreadOut(
         thread_id=thread.id,
         subject=thread.subject_norm,
         message_count=thread.message_count,
-        items=[message_out(row, flags.get(row.id)) for row in rows],
+        items=[message_out(row, flags.get(row.id), kinds.get(row.id)) for row in rows],
     )

@@ -22,6 +22,7 @@ from ...models import (
     Account,
     Attachment,
     Message,
+    MessageValue,
     Outbox,
     Thread,
 )
@@ -29,22 +30,39 @@ from ...sync import actions
 from ...sync import outbox as outbox_module
 from ...sync.actions import MessageNotFoundError
 from ...sync.attachments import AttachmentUnavailableError, load_attachment_bytes
+from ...sync.mining import VALUE_KINDS, mask_value
 from ...sync.outbox import SendLimitExceeded, enforce_agent_send_limit
 from ...sync.queries import FolderNotFoundError
 from ...sync.queries import list_messages as query_messages
-from ..deps import AccountDep, ArqDep, PrincipalDep, SessionDep, require_read
+from .. import audit
+from ..deps import (
+    AccountDep,
+    ArqDep,
+    PrincipalDep,
+    SessionDep,
+    readable_account_ids,
+    require_read,
+)
 from ..schemas import (
     BodyOut,
     FlagUpdate,
     FolderOut,
     MessageOut,
     MessagePage,
+    MessageValueOut,
     MoveRequest,
     OutboxCreate,
     OutboxOut,
     ThreadOut,
 )
-from ..serializers import body_out, folders_out, message_flags, message_out, thread_out
+from ..serializers import (
+    body_out,
+    folders_out,
+    message_flags,
+    message_out,
+    message_value_kinds,
+    thread_out,
+)
 
 log = get_logger(__name__)
 
@@ -61,6 +79,30 @@ async def list_folders(account: AccountDep, session: SessionDep) -> list[FolderO
 
 
 PageLimit = Annotated[int, Query(ge=1, le=200)]
+ValueKinds = Annotated[list[str] | None, Query()]
+
+
+def _checked_value_kinds(value_kind: list[str] | None) -> list[str] | None:
+    if not value_kind:
+        return None
+    unknown = sorted(set(value_kind) - set(VALUE_KINDS))
+    if unknown:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"unknown value kind: {unknown}")
+    return value_kind
+
+
+async def _message_page(
+    session: SessionDep,
+    rows: list[Message],
+    next_cursor: str | None,
+    *,
+    folder_id: uuid.UUID | None = None,
+) -> MessagePage:
+    ids = [row.id for row in rows]
+    flags = await message_flags(session, ids, folder_id)
+    kinds = await message_value_kinds(session, ids)
+    items = [message_out(row, flags.get(row.id), kinds.get(row.id)) for row in rows]
+    return MessagePage(items=items, next_cursor=next_cursor)
 
 
 @router.get(
@@ -77,20 +119,23 @@ async def list_messages(
     flagged: bool | None = None,
     has_attachments: bool | None = None,
     thread_id: uuid.UUID | None = None,
+    value_kind: ValueKinds = None,
     limit: PageLimit = 50,
     cursor: str | None = None,
 ) -> MessagePage:
     """List messages with folder/status filters and full-text search."""
+    kinds = _checked_value_kinds(value_kind)
     try:
         rows, next_cursor = await query_messages(
             session,
-            account.id,
+            [account.id],
             folder_id=folder_id,
             q=q,
             unread=unread,
             flagged=flagged,
             has_attachments=has_attachments,
             thread_id=thread_id,
+            value_kinds=kinds,
             limit=limit,
             cursor=cursor,
         )
@@ -99,9 +144,47 @@ async def list_messages(
     except (ValueError, TypeError) as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="invalid cursor") from exc
 
-    flags = await message_flags(session, [row.id for row in rows], folder_id)
-    items = [message_out(row, flags.get(row.id)) for row in rows]
-    return MessagePage(items=items, next_cursor=next_cursor)
+    return await _message_page(session, rows, next_cursor, folder_id=folder_id)
+
+
+@router.get("/messages", response_model=MessagePage, dependencies=[Depends(require_read)])
+async def search_messages(
+    principal: PrincipalDep,
+    session: SessionDep,
+    account_id: Annotated[list[uuid.UUID] | None, Query()] = None,
+    q: str | None = None,
+    unread: bool | None = None,
+    flagged: bool | None = None,
+    has_attachments: bool | None = None,
+    value_kind: ValueKinds = None,
+    limit: PageLimit = 50,
+    cursor: str | None = None,
+) -> MessagePage:
+    """Search every account the caller may read.
+
+    There is no folder filter here on purpose: folders belong to one account, so the
+    concept does not survive the crossing. Everything else matches the per-account route.
+    """
+    kinds = _checked_value_kinds(value_kind)
+    account_ids = await readable_account_ids(session, principal, account_id)
+    if not account_ids:
+        return MessagePage(items=[], next_cursor=None)
+    try:
+        rows, next_cursor = await query_messages(
+            session,
+            account_ids,
+            q=q,
+            unread=unread,
+            flagged=flagged,
+            has_attachments=has_attachments,
+            value_kinds=kinds,
+            limit=limit,
+            cursor=cursor,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="invalid cursor") from exc
+
+    return await _message_page(session, rows, next_cursor)
 
 
 async def _message_dep(
@@ -132,7 +215,8 @@ async def _account_of(session: SessionDep, message: Message) -> Account:
 )
 async def get_message(message: MessageDep, session: SessionDep) -> MessageOut:
     flags = await message_flags(session, [message.id])
-    return message_out(message, flags.get(message.id))
+    kinds = await message_value_kinds(session, [message.id])
+    return message_out(message, flags.get(message.id), kinds.get(message.id))
 
 
 @router.get(
@@ -140,6 +224,44 @@ async def get_message(message: MessageDep, session: SessionDep) -> MessageOut:
 )
 async def get_message_body(message: MessageDep, session: SessionDep) -> BodyOut:
     return await body_out(session, message)
+
+
+@router.get(
+    "/messages/{message_id}/values",
+    response_model=list[MessageValueOut],
+    dependencies=[Depends(require_read)],
+)
+async def get_message_values(
+    message: MessageDep, principal: PrincipalDep, session: SessionDep, reveal: bool = False
+) -> list[MessageValueOut]:
+    """Values mined out of one message.
+
+    Masked by default: the list view should be able to show that a code arrived without
+    putting it on screen. `reveal=true` returns the plaintext and records who asked.
+    """
+    rows = (
+        (
+            await session.execute(
+                select(MessageValue)
+                .where(MessageValue.message_id == message.id)
+                .order_by(MessageValue.kind, MessageValue.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if reveal and rows:
+        await audit.record(session, principal, "reveal_values", target_ids=[str(message.id)])
+    return [
+        MessageValueOut(
+            id=row.id,
+            kind=row.kind,
+            value=row.value if reveal else mask_value(row.kind, row.value),
+            confidence=row.confidence,
+            revealed=reveal,
+        )
+        for row in rows
+    ]
 
 
 @router.get(
@@ -214,7 +336,8 @@ async def update_flags(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     await session.refresh(message)
     flags = await message_flags(session, [message.id])
-    return message_out(message, flags.get(message.id))
+    kinds = await message_value_kinds(session, [message.id])
+    return message_out(message, flags.get(message.id), kinds.get(message.id))
 
 
 @router.post("/messages/{message_id}/move", status_code=status.HTTP_202_ACCEPTED)
