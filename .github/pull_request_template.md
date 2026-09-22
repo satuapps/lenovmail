@@ -13,6 +13,7 @@
 ## Checklist
 
 - [ ] `uv run ruff check src tests` passes
+- [ ] `uv run ruff format --check src tests` passes
 - [ ] `uv run mypy` passes
 - [ ] `uv run pytest -q` passes
 - [ ] `npm --prefix web run typecheck` passes
