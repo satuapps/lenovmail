@@ -42,7 +42,7 @@ export default function PasswordPage() {
 
   return (
     <div className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-lg font-semibold text-fg">Change Password</h1>
+      <h1 className="page-title mb-4">Change Password</h1>
       <form onSubmit={(e) => void handleSubmit(e)} className="card">
         {error && (
           <div className="mb-4 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">

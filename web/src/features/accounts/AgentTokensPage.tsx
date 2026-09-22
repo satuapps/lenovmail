@@ -106,7 +106,7 @@ export default function AgentTokensPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-4 text-lg font-semibold text-fg">Agent Tokens</h1>
+      <h1 className="page-title mb-4">Agent Tokens</h1>
 
       {loadError && (
         <div className="mb-4 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">

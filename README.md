@@ -9,6 +9,8 @@ send mail under limits you can audit.
 ![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)
 ![PostgreSQL 17](https://img.shields.io/badge/postgres-17-blue.svg)
 
+Product page: [satuapps.com/lenovmail](https://satuapps.com/lenovmail)
+
 ![Lenovmail mail view](docs/images/mail.png)
 
 ## What it does

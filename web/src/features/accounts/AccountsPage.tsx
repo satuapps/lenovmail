@@ -140,7 +140,7 @@ export default function AccountsPage() {
   return (
     <div className="mx-auto max-w-4xl p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Mail Accounts</h1>
+        <h1 className="page-title">Mail Accounts</h1>
         <div className="flex gap-2">
           <button type="button" className="btn" onClick={() => void load()}>
             Refresh

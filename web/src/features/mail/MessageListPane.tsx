@@ -70,7 +70,7 @@ export default function MessageListPane({
   }, [rangeEndIndex, items.length, hasMore, loadingMore]);
 
   return (
-    <section className="flex h-full min-h-0 w-96 shrink-0 flex-col border-r border-ink-600">
+    <section className="flex h-full min-h-0 w-96 shrink-0 flex-col border-r border-ink-600 bg-ink-900">
       <div className="space-y-2 border-b border-ink-600 p-2">
         <input
           type="search"
@@ -82,21 +82,21 @@ export default function MessageListPane({
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            className={`chip ${unreadOnly ? "chip-ok" : ""}`}
+            className={`chip ${unreadOnly ? "chip-active" : ""}`}
             onClick={onToggleUnread}
           >
             Unread
           </button>
           <button
             type="button"
-            className={`chip ${flaggedOnly ? "chip-warn" : ""}`}
+            className={`chip ${flaggedOnly ? "chip-active" : ""}`}
             onClick={onToggleFlagged}
           >
             Flagged
           </button>
           <button
             type="button"
-            className={`chip ${attachmentsOnly ? "chip-ok" : ""}`}
+            className={`chip ${attachmentsOnly ? "chip-active" : ""}`}
             onClick={onToggleAttachments}
           >
             Has attachments
@@ -146,24 +146,24 @@ export default function MessageListPane({
                     height: virtualRow.size,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`flex flex-col justify-center gap-0.5 border-b border-ink-700 px-3 py-1 text-left ${
-                    isActive ? "bg-ink-700" : "hover:bg-ink-800"
+                  className={`flex flex-col justify-center gap-0.5 border-b border-white/5 px-3 py-1 text-left transition-colors ${
+                    isActive ? "row-active" : "hover:bg-white/[0.04]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`flex min-w-0 items-center gap-1.5 truncate text-sm ${
+                      className={`flex min-w-0 items-center gap-1.5 truncate text-sm leading-tight ${
                         message.seen ? "text-fg-muted" : "font-semibold text-fg"
                       }`}
                     >
-                      {!message.seen && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />}
+                      {!message.seen && <span className="led led-accent" aria-hidden />}
                       <span className="truncate">{senderLabel(message.from_name, message.from_addr)}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-fg-dim">{shortDate(message.internal_date)}</span>
+                    <span className="mono shrink-0 text-[11px] text-fg-dim">{shortDate(message.internal_date)}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
-                      className={`truncate text-sm ${message.seen ? "text-fg-muted" : "text-fg"}`}
+                      className={`truncate text-sm leading-tight ${message.seen ? "text-fg-muted" : "text-fg"}`}
                     >
                       {message.subject || "(no subject)"}
                     </span>
@@ -178,7 +178,7 @@ export default function MessageListPane({
                       </span>
                     )}
                   </div>
-                  <span className="truncate text-xs text-fg-dim">{message.snippet}</span>
+                  <span className="truncate text-xs leading-tight text-fg-dim">{message.snippet}</span>
                 </button>
               );
             })}

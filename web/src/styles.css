@@ -1,21 +1,31 @@
 /* Lenovmail — authored by satuapps (satuapps.com) */
 @import "tailwindcss";
 
-/* Shared color tokens: used by every feature to keep the look consistent. */
+/* Shared design tokens. The names are stable across the codebase; only values change here. */
 @theme {
-  --color-ink-900: #0b0f14;
-  --color-ink-800: #111823;
-  --color-ink-700: #18202e;
-  --color-ink-600: #222c3d;
-  --color-ink-500: #33405a;
-  --color-fg: #e6edf7;
-  --color-fg-muted: #93a1b8;
-  --color-fg-dim: #6b7a92;
-  --color-accent: #6ea8fe;
-  --color-accent-strong: #3d84f7;
-  --color-ok: #4ade80;
-  --color-warn: #fbbf24;
+  --color-ink-900: #07080b;
+  --color-ink-800: #0c0e13;
+  --color-ink-700: #12151c;
+  --color-ink-600: #1b2029;
+  --color-ink-500: #2a323f;
+  --color-fg: #e8ecf4;
+  --color-fg-muted: #9aa6bd;
+  --color-fg-dim: #6a768f;
+  --color-accent: #6799fe;
+  --color-accent-strong: #4d6bfe;
+  --color-accent-deep: #3a65c2;
+  --color-ok: #34d399;
+  --color-warn: #f7ad31;
   --color-danger: #f87171;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  /* Accent as raw channels so rules below can vary only the alpha. */
+  --accent-rgb: 77, 107, 254;
+  --grid-line: rgba(103, 153, 254, 0.06);
 }
 
 html,
@@ -28,47 +38,188 @@ body {
   margin: 0;
   background: var(--color-ink-900);
   color: var(--color-fg);
-  font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-2 rounded-md border border-ink-600 bg-ink-700 px-3 py-1.5 text-sm
-      font-medium text-fg transition-colors hover:bg-ink-600 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-fg transition-colors;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 1px rgba(var(--accent-rgb), 0.9),
+      0 0 0 4px rgba(var(--accent-rgb), 0.22);
   }
   .btn-primary {
-    @apply border-accent-strong bg-accent-strong text-white hover:bg-accent;
+    background: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+    color: #fff;
+    box-shadow: 0 8px 20px -12px rgba(var(--accent-rgb), 0.95);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-deep);
+    border-color: var(--color-accent-deep);
   }
   .btn-danger {
-    @apply border-danger/50 text-danger hover:bg-danger/10;
+    background: transparent;
+    border-color: rgba(248, 113, 113, 0.45);
+    color: var(--color-danger);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: rgba(248, 113, 113, 0.12);
   }
   .btn-ghost {
-    @apply border-transparent bg-transparent text-fg-muted hover:bg-ink-700 hover:text-fg;
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-fg-muted);
   }
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-fg);
+  }
+
   .input {
-    @apply w-full rounded-md border border-ink-600 bg-ink-800 px-3 py-2 text-sm text-fg
-      placeholder:text-fg-dim focus:border-accent focus:outline-none;
+    @apply w-full rounded-md px-3 py-2 text-sm text-fg;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
   }
+  .input::placeholder {
+    color: var(--color-fg-dim);
+  }
+  .input:focus {
+    outline: none;
+    border-color: rgba(var(--accent-rgb), 0.8);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  }
+
   .label {
-    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-fg-muted;
+    @apply mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-fg-dim;
+    font-family: var(--font-mono);
   }
+
   .card {
-    @apply rounded-lg border border-ink-600 bg-ink-800 p-4;
+    @apply rounded-xl p-4;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
+
+  .panel {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border border-ink-600 px-2 py-0.5 text-xs text-fg-muted;
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] uppercase tracking-[0.08em] text-fg-muted;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    font-family: var(--font-mono);
   }
   .chip-ok {
-    @apply border-ok/40 text-ok;
+    border-color: rgba(52, 211, 153, 0.45);
+    background: rgba(52, 211, 153, 0.08);
+    color: var(--color-ok);
   }
   .chip-warn {
-    @apply border-warn/40 text-warn;
+    border-color: rgba(247, 173, 49, 0.45);
+    background: rgba(247, 173, 49, 0.08);
+    color: var(--color-warn);
   }
   .chip-danger {
-    @apply border-danger/40 text-danger;
+    border-color: rgba(248, 113, 113, 0.45);
+    background: rgba(248, 113, 113, 0.08);
+    color: var(--color-danger);
   }
+  /* "Filter is on", not a severity — used by the message-list filter chips. */
+  .chip-active {
+    border-color: rgba(var(--accent-rgb), 0.55);
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--color-accent);
+  }
+
   .mono {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .page-title {
+    @apply text-sm font-semibold uppercase tracking-[0.18em] text-fg;
+    font-family: var(--font-mono);
+  }
+
+  .nav-link {
+    @apply rounded-md px-3 py-1.5 text-sm text-fg-muted transition-colors;
+  }
+  .nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-fg);
+  }
+  .nav-link-active {
+    background: rgba(var(--accent-rgb), 0.16);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45);
+    color: var(--color-fg);
+  }
+
+  /* Selected row in the folder list and the message list. */
+  .row-active {
+    background: rgba(var(--accent-rgb), 0.1);
+    box-shadow: inset 2px 0 0 var(--color-accent-strong);
+    color: var(--color-fg);
+  }
+
+  .led {
+    @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full;
+  }
+  .led-ok {
+    background: var(--color-ok);
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.9);
+    animation: led-pulse 2.4s ease-in-out infinite;
+  }
+  .led-warn {
+    background: var(--color-warn);
+    box-shadow: 0 0 8px rgba(247, 173, 49, 0.9);
+  }
+  .led-accent {
+    background: var(--color-accent);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.9);
+  }
+
+  /* Faint hairline grid for the surfaces that are otherwise empty background. */
+  .hud-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+}
+
+@keyframes led-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led-ok {
+    animation: none;
   }
 }
 

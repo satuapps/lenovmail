@@ -185,7 +185,7 @@ export default function AddAccountWizard() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-1 text-lg font-semibold text-fg">Add Mail Account</h1>
+      <h1 className="page-title mb-1">Add Mail Account</h1>
       <div className="mb-4 text-sm text-fg-muted">Step {step} of 3</div>
 
       {step === 1 && (

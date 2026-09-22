@@ -145,7 +145,7 @@ export default function AccountDetailPage() {
     <div className="mx-auto max-w-3xl p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-fg">{account.email_address}</h1>
+          <h1 className="page-title">{account.email_address}</h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-fg-muted">
             <span className="chip">{account.provider}</span>
             <span className="chip">{account.status}</span>

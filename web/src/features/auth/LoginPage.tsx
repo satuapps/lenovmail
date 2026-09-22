@@ -26,11 +26,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid h-full place-items-center bg-ink-900 px-4">
-      <form onSubmit={(e) => void handleSubmit(e)} className="card w-full max-w-sm">
-        <div className="mb-4 text-center">
-          <div className="mono text-lg font-semibold text-fg">lenovmail</div>
-          <div className="text-sm text-fg-muted">Sign in to manage your mail</div>
+    <div className="hud-grid relative grid h-full place-items-center bg-ink-900 px-4">
+      <div
+        className="pointer-events-none absolute h-80 w-80 rounded-full bg-accent-strong/20 blur-[120px]"
+        aria-hidden
+      />
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="card relative w-full max-w-sm shadow-[0_40px_90px_-50px_rgba(77,107,254,0.9)]"
+      >
+        <div className="mb-5 text-center">
+          <div className="mono text-lg font-semibold uppercase tracking-[0.28em] text-fg">
+            lenovmail
+          </div>
+          <div className="mono mt-1 text-[11px] uppercase tracking-[0.16em] text-fg-dim">
+            self-hosted mail infrastructure
+          </div>
         </div>
 
         {error && (
@@ -79,6 +90,9 @@ export default function LoginPage() {
         <p className="mt-4 text-center text-xs text-fg-dim">
           No admin account yet? Create one via the CLI:{" "}
           <code className="mono">uv run lenovmail bootstrap-admin --email admin@example.com</code>
+        </p>
+        <p className="mono mt-2 text-center text-[11px] tracking-[0.12em] text-fg-dim">
+          satuapps.com/lenovmail
         </p>
       </form>
     </div>

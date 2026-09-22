@@ -135,14 +135,21 @@ export default function ReadingPane({
           <h1 className="text-lg font-semibold text-fg">{message.subject || "(no subject)"}</h1>
           <span className="chip shrink-0">{bodyState ?? message.body_state}</span>
         </div>
-        <div className="text-sm text-fg-muted">
-          From <span className="text-fg">{senderLabel(message.from_name, message.from_addr)}</span>
-          {message.from_addr ? ` <${message.from_addr}>` : ""}
-        </div>
-        <div className="text-xs text-fg-dim">
-          To {message.to.map((addr) => addr.name ? `${addr.name} <${addr.addr}>` : addr.addr).join(", ") || "—"}
-        </div>
-        <div className="text-xs text-fg-dim">{fullDate(message.sent_date)}</div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          <dt className="mono uppercase tracking-[0.14em] text-fg-dim">From</dt>
+          <dd className="truncate text-fg">
+            {senderLabel(message.from_name, message.from_addr)}
+            {message.from_addr ? ` <${message.from_addr}>` : ""}
+          </dd>
+          <dt className="mono uppercase tracking-[0.14em] text-fg-dim">To</dt>
+          <dd className="truncate text-fg-muted">
+            {message.to
+              .map((addr) => (addr.name ? `${addr.name} <${addr.addr}>` : addr.addr))
+              .join(", ") || "—"}
+          </dd>
+          <dt className="mono uppercase tracking-[0.14em] text-fg-dim">Date</dt>
+          <dd className="mono text-fg-muted">{fullDate(message.sent_date)}</dd>
+        </dl>
       </header>
 
       <div className="flex flex-wrap items-center gap-1.5 border-b border-ink-600 px-4 py-2">
@@ -248,7 +255,7 @@ export default function ReadingPane({
                 <li key={att.id} className="flex items-center justify-between text-sm">
                   <span className="truncate text-fg">{att.filename || "(no filename)"}</span>
                   <span className="ml-2 flex items-center gap-2 text-xs text-fg-dim">
-                    {formatBytes(att.size_bytes)}
+                    <span className="mono">{formatBytes(att.size_bytes)}</span>
                     <a
                       className="text-accent underline"
                       href={api.attachmentUrl(message.id, att.id)}

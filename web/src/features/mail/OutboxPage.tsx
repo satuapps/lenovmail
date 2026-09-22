@@ -71,7 +71,7 @@ export default function OutboxPage() {
   return (
     <div className="flex h-full min-h-0 flex-col p-4">
       <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-fg">Outbox</h1>
+        <h1 className="page-title">Outbox</h1>
         <select
           className="input w-auto"
           value={accountId ?? ""}
@@ -93,9 +93,9 @@ export default function OutboxPage() {
 
       {error !== null && <p className="mb-3 text-sm text-danger">{error}</p>}
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-ink-600">
+      <div className="panel min-h-0 flex-1 overflow-y-auto rounded-xl">
         <table className="w-full border-collapse text-sm">
-          <thead className="sticky top-0 bg-ink-800 text-left text-xs uppercase tracking-wide text-fg-muted">
+          <thead className="mono sticky top-0 bg-ink-800 text-left text-[11px] uppercase tracking-[0.12em] text-fg-muted">
             <tr>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Subject</th>
@@ -123,7 +123,7 @@ export default function OutboxPage() {
               </tr>
             )}
             {items.map((item) => (
-              <tr key={item.id} className="border-t border-ink-600">
+              <tr key={item.id} className="border-t border-white/5">
                 <td className="px-3 py-2">
                   <span className={outboxStatusChipClass(item.status)}>
                     {OUTBOX_STATUS_LABEL[item.status] ?? item.status}
@@ -131,11 +131,11 @@ export default function OutboxPage() {
                 </td>
                 <td className="max-w-xs truncate px-3 py-2 text-fg">{item.payload.subject || "(no subject)"}</td>
                 <td className="max-w-xs truncate px-3 py-2 text-fg-muted">{item.payload.to.join(", ")}</td>
-                <td className="px-3 py-2 text-fg-muted" title={fullDate(item.created_at)}>
+                <td className="mono px-3 py-2 text-fg-muted" title={fullDate(item.created_at)}>
                   {relativeTime(item.created_at)}
                 </td>
-                <td className="px-3 py-2 text-fg-muted">{fullDate(item.sent_at)}</td>
-                <td className="px-3 py-2 text-fg-muted">{item.attempts}</td>
+                <td className="mono px-3 py-2 text-fg-muted">{fullDate(item.sent_at)}</td>
+                <td className="mono px-3 py-2 text-fg-muted">{item.attempts}</td>
                 <td className="max-w-xs truncate px-3 py-2 text-danger" title={item.last_error ?? undefined}>
                   {item.last_error ?? ""}
                 </td>

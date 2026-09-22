@@ -38,18 +38,30 @@ function Shell() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-ink-600 bg-ink-800 px-4 py-2">
-        <span className="mono text-sm font-semibold tracking-tight text-fg">lenovmail</span>
+      <header className="relative flex items-center gap-4 border-b border-ink-600 bg-ink-800 px-4 py-2">
+        <span
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-strong/70 to-transparent"
+          aria-hidden
+        />
+        <a
+          href="https://satuapps.com/lenovmail"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-baseline gap-2"
+        >
+          <span className="mono text-sm font-semibold uppercase tracking-[0.22em] text-fg">
+            lenovmail
+          </span>
+          <span className="mono hidden text-[11px] tracking-[0.12em] text-fg-dim sm:inline">
+            satuapps.com
+          </span>
+        </a>
         <nav className="flex items-center gap-1">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>
-                `rounded-md px-3 py-1.5 text-sm ${
-                  isActive ? "bg-ink-600 text-fg" : "text-fg-muted hover:bg-ink-700 hover:text-fg"
-                }`
-              }
+              className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}
             >
               {item.label}
             </NavLink>
@@ -60,9 +72,10 @@ function Shell() {
             className={streamStatus === "open" ? "chip chip-ok" : "chip chip-warn"}
             title="Realtime event stream from the server"
           >
+            <span className={streamStatus === "open" ? "led led-ok" : "led led-warn"} aria-hidden />
             {STATUS_LABEL[streamStatus]}
           </span>
-          <NavLink to="/password" className="text-xs text-fg-muted hover:text-fg">
+          <NavLink to="/password" className="mono text-xs text-fg-muted hover:text-fg">
             {user.email}
           </NavLink>
           <button
@@ -79,7 +92,7 @@ function Shell() {
           </button>
         </div>
       </header>
-      <main className="min-h-0 flex-1">
+      <main className="hud-grid min-h-0 flex-1">
         <Routes>
           <Route path="/mail" element={<MailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />

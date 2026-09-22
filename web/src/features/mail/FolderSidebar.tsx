@@ -48,16 +48,17 @@ export default function FolderSidebar({
         </select>
         {activeAccount !== null && (
           <div className="mt-2 flex items-center justify-between text-xs text-fg-muted">
-            <span className="truncate">{activeAccount.email_address}</span>
+            <span className="mono truncate">{activeAccount.email_address}</span>
             <span className={accountStatusChipClass(activeAccount.status)}>{activeAccount.status}</span>
           </div>
         )}
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto p-2">
+        <p className="label px-2 pt-1">Folders</p>
         <button
           type="button"
           className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm ${
-            activeFolderId === null ? "bg-ink-600 text-fg" : "text-fg-muted hover:bg-ink-700 hover:text-fg"
+            activeFolderId === null ? "row-active" : "text-fg-muted hover:bg-white/[0.05] hover:text-fg"
           }`}
           onClick={() => onSelectFolder(null)}
         >
@@ -77,8 +78,8 @@ export default function FolderSidebar({
                 type="button"
                 className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
                   activeFolderId === folder.id
-                    ? "bg-ink-600 text-fg"
-                    : "text-fg-muted hover:bg-ink-700 hover:text-fg"
+                    ? "row-active"
+                    : "text-fg-muted hover:bg-white/[0.05] hover:text-fg"
                 }`}
                 onClick={() => onSelectFolder(folder.id)}
                 title={folder.sync_error ?? undefined}
@@ -97,7 +98,7 @@ export default function FolderSidebar({
                   )}
                 </span>
                 {folder.unread > 0 && (
-                  <span className="shrink-0 rounded-full bg-ink-600 px-1.5 text-xs text-fg">
+                  <span className="mono shrink-0 rounded-full bg-white/[0.08] px-1.5 text-[11px] text-fg">
                     {folder.unread}
                   </span>
                 )}
