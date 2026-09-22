@@ -26,12 +26,25 @@ persistent store for structured data. Raw MIME bodies live on disk under
 flowchart LR
     GUI["React GUI (web/dist)"] -->|same-origin| API
     Agent["AI agent (REST or MCP)"] --> API
-    API["API process: FastAPI serving /api and /api/mcp"] -->|SQL| PG[(Postgres)]
-    API -->|enqueue jobs, pub/sub| Redis[(Redis)]
-    Worker["Worker process: arq sync, IDLE, outbox, janitor"] -->|SQL| PG
+
+    subgraph Processes
+        API["API process: FastAPI serving /api and /api/mcp"]
+        Worker["Worker process: arq sync, IDLE, outbox, janitor"]
+    end
+
+    subgraph State
+        PG[(Postgres)]
+        Redis[(Redis)]
+        Blobs[("Blob store at LENOVMAIL_BLOB_ROOT")]
+    end
+
+    API -->|SQL| PG
+    API -->|enqueue jobs, pub/sub| Redis
+    API -->|read raw messages| Blobs
+    Worker -->|SQL| PG
     Worker -->|dequeue, pub/sub, IDLE locks| Redis
+    Worker -->|write content-addressed .eml.gz| Blobs
     Worker -->|IMAP / Graph| Providers["Mail providers"]
-    Worker -->|content-addressed .eml.gz| Blobs[("Blob store at LENOVMAIL_BLOB_ROOT")]
 ```
 
 The API process itself also holds an arq pool (`app.state.arq`, created in

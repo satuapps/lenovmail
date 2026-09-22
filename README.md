@@ -63,13 +63,23 @@ Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
 flowchart LR
     Browser[Browser GUI] -->|session cookie| API
     Agent[AI agent] -->|Bearer token| API
-    API[FastAPI: REST + MCP + static GUI] --> PG[(PostgreSQL)]
-    API --> RD[(Redis)]
-    Worker[arq worker] --> PG
-    Worker --> RD
+
+    subgraph Lenovmail
+        API[FastAPI: REST + MCP + static GUI]
+        Worker[arq worker]
+    end
+
+    subgraph Stores
+        PG[(PostgreSQL)]
+        RD[(Redis)]
+    end
+
+    API --> PG
+    API <-->|jobs, events| RD
+    Worker --> PG
+    Worker <--> RD
     Worker -->|IMAP / SMTP| Mailserver[(Mail providers)]
     Worker -->|Microsoft Graph| Graph[(Microsoft 365)]
-    RD -->|pub/sub| API
 ```
 
 The API process serves the REST API, the built React client, and the MCP endpoint. The worker
@@ -119,8 +129,8 @@ is closed. The janitor (`janitor_sweep`, hourly) re-checks every account the syn
 stateDiagram-v2
     active --> auth_error: provider rejects login
     auth_error --> active: credentials work again
-    auth_error --> disabled: still rejected after grace period
-    auth_error --> deleted: same, with JANITOR_ACCOUNT_ACTION=delete
+    auth_error --> disabled: grace period expired (default)
+    auth_error --> deleted: grace period expired, action=delete
 ```
 
 Transient failures never count — a timeout or a 5xx leaves the account exactly where it was.
