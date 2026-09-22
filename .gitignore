@@ -1,0 +1,16 @@
+# Lenovmail — authored by satuapps
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+web/dist/
+var/
+uv.lock.bak
+*.egg-info/
+dist/
+build/
+.DS_Store

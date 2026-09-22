@@ -1,0 +1,68 @@
+# Lenovmail — authored by satuapps
+[project]
+name = "lenovmail"
+version = "0.1.0"
+description = "Multi-account mail infrastructure: IMAP + Microsoft Graph, web GUI, MCP agent API"
+authors = [{ name = "satuapps" }]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi>=0.141,<0.142",
+    "uvicorn[standard]>=0.53,<0.54",
+    "sqlalchemy[asyncio]>=2.0,<2.1",
+    "alembic>=1.20,<1.21",
+    "asyncpg>=0.31,<0.32",
+    "pydantic-settings>=2.0,<3",
+    "arq>=0.28,<0.29",
+    "redis>=5.2,<6",
+    "imapclient>=4.1,<4.2",
+    "aiosmtplib>=5.1,<5.2",
+    "httpx>=0.28,<0.29",
+    "msal>=1.39,<2",
+    "cryptography>=50,<51",
+    "argon2-cffi>=25,<26",
+    "dnspython>=2.8,<3",
+    "nh3>=0.3,<0.4",
+    "structlog>=25,<27",
+    "typer>=0.20,<1",
+    "mcp>=2.2,<3",
+    "pyyaml>=6,<7",
+]
+
+[project.scripts]
+lenovmail = "lenovmail.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=1.4",
+    "ruff>=0.16",
+    "mypy>=1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lenovmail"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "C4", "SIM"]
+ignore = ["B008", "SIM108"]
+
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "src"
+packages = ["lenovmail"]
+ignore_missing_imports = true
+check_untyped_defs = true

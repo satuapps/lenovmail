@@ -1,0 +1,79 @@
+/* Lenovmail — authored by satuapps */
+@import "tailwindcss";
+
+/* Shared color tokens: used by every feature to keep the look consistent. */
+@theme {
+  --color-ink-900: #0b0f14;
+  --color-ink-800: #111823;
+  --color-ink-700: #18202e;
+  --color-ink-600: #222c3d;
+  --color-ink-500: #33405a;
+  --color-fg: #e6edf7;
+  --color-fg-muted: #93a1b8;
+  --color-fg-dim: #6b7a92;
+  --color-accent: #6ea8fe;
+  --color-accent-strong: #3d84f7;
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink-900);
+  color: var(--color-fg);
+  font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md border border-ink-600 bg-ink-700 px-3 py-1.5 text-sm
+      font-medium text-fg transition-colors hover:bg-ink-600 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-accent-strong bg-accent-strong text-white hover:bg-accent;
+  }
+  .btn-danger {
+    @apply border-danger/50 text-danger hover:bg-danger/10;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-fg-muted hover:bg-ink-700 hover:text-fg;
+  }
+  .input {
+    @apply w-full rounded-md border border-ink-600 bg-ink-800 px-3 py-2 text-sm text-fg
+      placeholder:text-fg-dim focus:border-accent focus:outline-none;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-fg-muted;
+  }
+  .card {
+    @apply rounded-lg border border-ink-600 bg-ink-800 p-4;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-ink-600 px-2 py-0.5 text-xs text-fg-muted;
+  }
+  .chip-ok {
+    @apply border-ok/40 text-ok;
+  }
+  .chip-warn {
+    @apply border-warn/40 text-warn;
+  }
+  .chip-danger {
+    @apply border-danger/40 text-danger;
+  }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+}
+
+/* Thin scrollbar so long message lists don't eat space. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-500) transparent;
+}

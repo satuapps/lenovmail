@@ -1,0 +1,9 @@
+# Lenovmail — authored by satuapps
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/satuapps/lenovmail#readme
+    about: README covers setup, the REST API, and the MCP server. Read it before filing.
+  - name: Security vulnerability
+    url: https://github.com/satuapps/lenovmail/security/advisories/new
+    about: Report vulnerabilities privately, not as a public issue. See SECURITY.md.

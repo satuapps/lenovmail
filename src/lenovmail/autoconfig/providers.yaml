@@ -1,0 +1,42 @@
+# Lenovmail — authored by satuapps
+# Built-in overrides (step 1 of the detection chain).
+#
+# Used for major providers whose settings are stable and often unavailable (or
+# incomplete) in the ISPDB. `auth` is the mechanism the Lenovmail client uses
+# (v1: always password, meaning an app password for 2FA-enabled providers).
+# `oauth_required` flags that the provider will reject a regular account password.
+providers:
+  - domains: [gmail.com, googlemail.com]
+    provider: imap
+    oauth_required: true
+    note: "Gmail requires an app password (enable 2-step verification), not your account password."
+    imap: {host: imap.gmail.com, port: 993, security: ssl, auth: password}
+    smtp: {host: smtp.gmail.com, port: 465, security: ssl, auth: password}
+
+  - domains: [outlook.com, hotmail.com, live.com, msn.com, outlook.co.id]
+    provider: graph
+    oauth_required: true
+    note: "Microsoft 365/Outlook uses Microsoft Graph; connect via the Microsoft button."
+    imap: null
+    smtp: null
+
+  - domains: [yahoo.com, ymail.com, rocketmail.com]
+    provider: imap
+    oauth_required: true
+    note: "Yahoo requires an app password (create one under Security > Generate app password)."
+    imap: {host: imap.mail.yahoo.com, port: 993, security: ssl, auth: password}
+    smtp: {host: smtp.mail.yahoo.com, port: 465, security: ssl, auth: password}
+
+  - domains: [icloud.com, me.com, mac.com]
+    provider: imap
+    oauth_required: true
+    note: "iCloud requires an app-specific password from appleid.apple.com."
+    imap: {host: imap.mail.me.com, port: 993, security: ssl, auth: password}
+    smtp: {host: smtp.mail.me.com, port: 587, security: starttls, auth: password}
+
+  - domains: [zoho.com, zohomail.com]
+    provider: imap
+    oauth_required: false
+    note: null
+    imap: {host: imap.zoho.com, port: 993, security: ssl, auth: password}
+    smtp: {host: smtp.zoho.com, port: 465, security: ssl, auth: password}

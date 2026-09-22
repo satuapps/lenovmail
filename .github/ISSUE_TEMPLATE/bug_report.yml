@@ -1,0 +1,82 @@
+# Lenovmail — authored by satuapps
+name: Bug report
+description: Something in Lenovmail isn't working as documented.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Output of `uv run lenovmail --help` header, a git commit hash, or a tag.
+      placeholder: e.g. 0.1.0 / a1b2c3d
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment mode
+      options:
+        - docker compose (docker-compose.yml)
+        - local dev (uv run uvicorn / uv run arq)
+        - other (describe below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Affected provider
+      description: Which account type is involved, if any.
+      options:
+        - IMAP
+        - Microsoft Graph
+        - both / not provider-specific
+        - not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact CLI commands, API calls, or GUI actions, in order.
+      placeholder: |
+        1. uv run lenovmail sync --email user@domain
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >
+        Relevant structlog output from the api/worker containers
+        (`docker compose logs api worker`) or terminal. Redact credentials, tokens, and email
+        addresses/subjects you don't want public.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this hasn't been reported.
+          required: true
+        - label: I removed credentials, tokens, and personal mail content from the logs above.
+          required: true

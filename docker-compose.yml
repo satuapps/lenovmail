@@ -1,0 +1,65 @@
+# Lenovmail — authored by satuapps
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: lenovmail
+      POSTGRES_PASSWORD: lenovmail
+      POSTGRES_DB: lenovmail
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Host port 5433: macOS already runs a local Postgres on 127.0.0.1:5432, which
+      # shadows Docker's wildcard bind so `localhost:5432` reaches the host's server.
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lenovmail"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8.8-alpine
+    ports:
+      # Host port 6380: same reason as Postgres (local Redis already uses 6379).
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    # Migrations run on start so `docker compose up` against an empty database is
+    # immediately usable (alembic is idempotent).
+    command: sh -c "alembic upgrade head && exec uvicorn lenovmail.api.app:app --host 0.0.0.0 --port 8000"
+    env_file:
+      - {path: .env, required: false}
+    environment: &appenv
+      LENOVMAIL_DATABASE_URL: postgresql+asyncpg://lenovmail:lenovmail@db:5432/lenovmail
+      LENOVMAIL_REDIS_URL: redis://redis:6379/0
+      LENOVMAIL_BLOB_ROOT: /var/lib/lenovmail/blobs
+    volumes:
+      - blobs:/var/lib/lenovmail/blobs
+    ports:
+      - "8080:8000"
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  worker:
+    build: .
+    command: arq lenovmail.workers.main.WorkerSettings
+    env_file:
+      - {path: .env, required: false}
+    environment: *appenv
+    volumes:
+      - blobs:/var/lib/lenovmail/blobs
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+volumes:
+  pgdata:
+  blobs:

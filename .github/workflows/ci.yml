@@ -1,0 +1,88 @@
+# Lenovmail — authored by satuapps
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: lenovmail
+          POSTGRES_PASSWORD: lenovmail
+          POSTGRES_DB: lenovmail
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lenovmail"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:8.8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      LENOVMAIL_DATABASE_URL: postgresql+asyncpg://lenovmail:lenovmail@localhost:5432/lenovmail
+      LENOVMAIL_REDIS_URL: redis://localhost:6379/0
+      LENOVMAIL_SECRET_KEY: dGVzdC1zZWNyZXQta2V5LTMyLWJ5dGVzLWxvbmchISE=
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Lint
+        run: uv run ruff check src tests
+
+      - name: Format
+        run: uv run ruff format --check src tests
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+
+      - name: Test
+        run: uv run pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm --prefix web ci
+
+      - name: Type check
+        run: npm --prefix web run typecheck
+
+      - name: Build
+        run: npm --prefix web run build
