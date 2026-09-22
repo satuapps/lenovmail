@@ -35,6 +35,7 @@ from ...providers.graph import (
     authorization_url,
     dump_token_cache,
     exchange_code,
+    graph_scopes,
     load_token_cache,
 )
 from ...providers.imap_pool import MailAuthError, MailPermanentError, MailTransientError, reset_pool
@@ -147,10 +148,11 @@ async def create_account(
                 host=discovery.smtp.host, port=discovery.smtp.port, security=discovery.smtp.security
             )
 
-    if provider == "graph" and not (settings.ms_client_id and settings.ms_client_secret):
+    # The secret is optional: a registration without one is driven as a public client.
+    if provider == "graph" and not settings.ms_client_id:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail="LENOVMAIL_MS_CLIENT_ID/SECRET are not set; Microsoft accounts can't be added",
+            detail="LENOVMAIL_MS_CLIENT_ID is not set; Microsoft accounts can't be added",
         )
     if provider == "imap" and imap_spec is None:
         raise HTTPException(
@@ -206,7 +208,7 @@ async def create_account(
         await session.commit()
         await _verify_imap_login(session, account)
     else:
-        session.add(GraphSettings(account_id=account_id, scopes=list(_graph_scopes())))
+        session.add(GraphSettings(account_id=account_id, scopes=graph_scopes()))
         await session.commit()
         state = uuid.uuid4().hex
         await resolved(
@@ -222,12 +224,6 @@ async def create_account(
     if provider == "imap":
         await arq.enqueue_job("sync_account", str(account_id))
     return result
-
-
-def _graph_scopes() -> list[str]:
-    from ...providers.graph import SCOPES
-
-    return SCOPES
 
 
 async def _verify_imap_login(session, account: Account) -> None:
@@ -410,7 +406,7 @@ async def oauth_callback(
 
     graph_settings = await session.get(GraphSettings, account.id)
     if graph_settings is None:
-        graph_settings = GraphSettings(account_id=account.id, scopes=list(_graph_scopes()))
+        graph_settings = GraphSettings(account_id=account.id, scopes=graph_scopes())
         session.add(graph_settings)
         await session.flush()
     cache = load_token_cache(account.id, graph_settings.token_cache_enc)

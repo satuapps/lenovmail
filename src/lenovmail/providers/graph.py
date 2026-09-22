@@ -27,8 +27,6 @@ from ..logging import get_logger
 log = get_logger(__name__)
 
 GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
-SCOPES = ["offline_access", "User.Read", "Mail.ReadWrite", "Mail.Send"]
-
 TOKEN_CACHE_FIELD = "graph_token_cache"
 
 MAX_ATTEMPTS = 5
@@ -101,14 +99,36 @@ def dump_token_cache(account_id: uuid.UUID, cache: msal.SerializableTokenCache) 
     return encrypt(token_cache_aad(account_id), cache.serialize().encode())
 
 
+def graph_scopes() -> list[str]:
+    """Scopes to request, from `LENOVMAIL_MS_SCOPES`.
+
+    Read per call rather than frozen into a module constant so a deployment can change the
+    value without a code change, and so tests can override it.
+    """
+    return settings.ms_scope_list
+
+
 def build_msal_app(
     token_cache: msal.SerializableTokenCache | None = None,
-) -> msal.ConfidentialClientApplication:
-    if not settings.ms_client_id or not settings.ms_client_secret:
-        raise GraphAuthError("LENOVMAIL_MS_CLIENT_ID/LENOVMAIL_MS_CLIENT_SECRET is not set")
-    return msal.ConfidentialClientApplication(
+) -> msal.ClientApplication:
+    """MSAL app for the configured registration.
+
+    An Azure registration of type "Mobile and desktop applications" has no client secret;
+    sending one anyway is rejected. So the secret decides the client type: present means a
+    confidential client, absent means a public client running the same authorization-code
+    flow without client authentication.
+    """
+    if not settings.ms_client_id:
+        raise GraphAuthError("LENOVMAIL_MS_CLIENT_ID is not set")
+    if settings.ms_client_secret:
+        return msal.ConfidentialClientApplication(
+            settings.ms_client_id,
+            client_credential=settings.ms_client_secret,
+            authority=settings.ms_authority,
+            token_cache=token_cache,
+        )
+    return msal.PublicClientApplication(
         settings.ms_client_id,
-        client_credential=settings.ms_client_secret,
         authority=settings.ms_authority,
         token_cache=token_cache,
     )
@@ -121,7 +141,7 @@ def redirect_uri() -> str:
 def authorization_url(state: str) -> str:
     """Microsoft consent URL for the authorization-code flow."""
     return build_msal_app().get_authorization_request_url(
-        SCOPES, state=state, redirect_uri=redirect_uri()
+        graph_scopes(), state=state, redirect_uri=redirect_uri()
     )
 
 
@@ -132,7 +152,7 @@ def exchange_code(code: str, token_cache: msal.SerializableTokenCache) -> dict[s
     """
     app = build_msal_app(token_cache)
     result = app.acquire_token_by_authorization_code(
-        code, scopes=SCOPES, redirect_uri=redirect_uri()
+        code, scopes=graph_scopes(), redirect_uri=redirect_uri()
     )
     if "access_token" not in result:
         raise GraphAuthError(
@@ -190,7 +210,9 @@ class GraphClient:
         account = self._account()
         if account is None:
             raise GraphAuthError("no account stored in the token cache; reconnect the account")
-        result = build_msal_app(self.token_cache).acquire_token_silent(SCOPES, account=account)
+        result = build_msal_app(self.token_cache).acquire_token_silent(
+            graph_scopes(), account=account
+        )
         if not result or "access_token" not in result:
             raise GraphAuthError(
                 (result or {}).get("error_description")
@@ -265,7 +287,7 @@ class GraphClient:
         if account is None:
             raise GraphAuthError("no account stored in the token cache")
         build_msal_app(self.token_cache).acquire_token_silent(
-            SCOPES, account=account, force_refresh=True
+            graph_scopes(), account=account, force_refresh=True
         )
 
     def _error_from(self, response: httpx.Response) -> Exception:

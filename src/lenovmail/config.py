@@ -28,8 +28,13 @@ class Settings(BaseSettings):
     session_ttl_days: int = 14
 
     ms_client_id: str = ""
+    # Empty for an app registration with no secret (Azure "Mobile and desktop applications"):
+    # the OAuth flow then runs as a public client. Set it for a confidential client.
     ms_client_secret: str = ""
     ms_authority: str = "https://login.microsoftonline.com/common"
+    # Azure rejects a granular scope list on the refresh path with AADSTS70000, so the default
+    # asks for whatever the app registration was already consented to.
+    ms_scopes: str = "https://graph.microsoft.com/.default"
 
     sync_interval_s: int = 300
     graph_poll_interval_s: int = 60
@@ -62,6 +67,18 @@ class Settings(BaseSettings):
     @property
     def allowed_host_list(self) -> list[str]:
         return [h.strip() for h in self.allowed_hosts.split(",") if h.strip()]
+
+    @property
+    def ms_scope_list(self) -> list[str]:
+        """Graph scopes to request, split on commas or whitespace.
+
+        `openid`, `profile` and `offline_access` are dropped: msal appends them itself and
+        raises `ValueError` if they are passed in, so leaving one in the env var would break
+        every OAuth start instead of widening the grant.
+        """
+        reserved = {"openid", "profile", "offline_access"}
+        parts = self.ms_scopes.replace(",", " ").split()
+        return [s for s in parts if s.lower() not in reserved]
 
     @property
     def cookies_secure(self) -> bool:

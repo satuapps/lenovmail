@@ -49,9 +49,10 @@ same `environment` block.
 
 | Variable | Default | Controls | Change it when |
 |---|---|---|---|
-| `LENOVMAIL_MS_CLIENT_ID` | `""` | Azure AD application (client) ID used by MSAL. | Adding Microsoft 365 / Outlook.com account support. Without it, adding a `graph` account returns `400` ("MS_CLIENT_ID/SECRET are not set"). |
-| `LENOVMAIL_MS_CLIENT_SECRET` | `""` | Azure AD client secret. | Same as above. |
+| `LENOVMAIL_MS_CLIENT_ID` | `""` | Azure AD application (client) ID used by MSAL. | Adding Microsoft 365 / Outlook.com account support. Without it, adding a `graph` account returns `400` ("LENOVMAIL_MS_CLIENT_ID is not set"). |
+| `LENOVMAIL_MS_CLIENT_SECRET` | `""` | Azure AD client secret. Empty means the registration has none, and `build_msal_app()` (`providers/graph.py`) uses a public client instead of a confidential one; the OAuth flow is otherwise identical. | The app registration is a confidential client (platform **Web** with a secret). Leave empty for a **Mobile and desktop applications** registration. |
 | `LENOVMAIL_MS_AUTHORITY` | `https://login.microsoftonline.com/common` | MSAL authority URL. | Restricting sign-in to a single Azure tenant (use `.../<tenant-id>` instead of `/common`). |
+| `LENOVMAIL_MS_SCOPES` | `https://graph.microsoft.com/.default` | Scopes requested at consent and on every silent refresh, split on commas or whitespace. `.default` means "whatever this registration already has consent for"; a granular list passes consent but is rejected at refresh time with `AADSTS70000`, which strands the account in `auth_error`. `openid`, `profile` and `offline_access` are dropped because msal adds them itself. | The registration must request less than it holds — see [deployment.md](deployment.md#scopes-and-aadsts70000). |
 
 ## Discovery & sync tuning
 
@@ -130,6 +131,7 @@ LENOVMAIL_REDIS_URL=redis://redis-host:6379/0
 
 # Required only to support Microsoft 365 / Outlook.com accounts.
 LENOVMAIL_MS_CLIENT_ID=<azure-app-client-id>
+# Only for a confidential app registration; omit it for one created without a secret.
 LENOVMAIL_MS_CLIENT_SECRET=<azure-app-client-secret>
 ```
 

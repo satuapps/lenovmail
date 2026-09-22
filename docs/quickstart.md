@@ -116,10 +116,11 @@ What this means for three common cases:
 - **An Outlook/Hotmail/Live/MSN address, or any custom domain whose MX points at Microsoft 365**,
   resolves to `provider: graph`. There's no password field for this — the wizard shows a
   **Connect with Microsoft** button that starts the OAuth flow instead. This requires
-  `LENOVMAIL_MS_CLIENT_ID`/`LENOVMAIL_MS_CLIENT_SECRET` to be set (empty by default); with them
-  unset, `POST /api/accounts` for a Graph account fails with `400 LENOVMAIL_MS_CLIENT_ID/SECRET
-  are not set; Microsoft accounts can't be added`. See [deployment.md](deployment.md) for
-  registering an Azure app. Skip this case for a first local run — use IMAP instead.
+  `LENOVMAIL_MS_CLIENT_ID` to be set (empty by default; the client secret is only needed for a
+  confidential app registration); without it, `POST /api/accounts` for a Graph account fails
+  with `400 LENOVMAIL_MS_CLIENT_ID is not set; Microsoft accounts can't be added`. See
+  [deployment.md](deployment.md) for registering an Azure app. Skip this case for a first local
+  run — use IMAP instead.
 - **A custom domain on a generic mail server** (no bundled override, no MX pointing at Microsoft)
   falls through to MX+ISPDB, then SRV, then the hostname probe. If none of those resolve
   anything, discovery returns `source: "none"` and the wizard's credential step expects host,

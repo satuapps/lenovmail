@@ -160,15 +160,16 @@ it the same as a full credential wipe.
 ## Microsoft Graph app registration
 
 Connecting Outlook/Microsoft 365 accounts needs an Azure AD (Entra ID) app registration — the
-API refuses to create a Graph account without it (`400 LENOVMAIL_MS_CLIENT_ID/SECRET are not
-set; Microsoft accounts can't be added`, `routes/accounts.py`). Set these before anyone tries to
+API refuses to create a Graph account without one (`400 LENOVMAIL_MS_CLIENT_ID is not set;
+Microsoft accounts can't be added`, `routes/accounts.py`). Set these before anyone tries to
 connect a Microsoft account:
 
 | Env var | Default | Where it's used |
 | --- | --- | --- |
 | `LENOVMAIL_MS_CLIENT_ID` | empty | Application (client) ID from the app registration |
-| `LENOVMAIL_MS_CLIENT_SECRET` | empty | A client secret value from **Certificates & secrets** |
+| `LENOVMAIL_MS_CLIENT_SECRET` | empty | A client secret value from **Certificates & secrets**. Leave it empty for a registration that has no secret: `build_msal_app()` then drives the same authorization-code flow as a public client instead of a confidential one |
 | `LENOVMAIL_MS_AUTHORITY` | `https://login.microsoftonline.com/common` | MSAL authority; `common` accepts both personal Microsoft accounts and any Azure AD tenant |
+| `LENOVMAIL_MS_SCOPES` | `https://graph.microsoft.com/.default` | Scopes requested at consent and on every silent refresh |
 
 In the Azure portal, under **App registrations → New registration**:
 
@@ -177,15 +178,34 @@ In the Azure portal, under **App registrations → New registration**:
    `providers/graph.py:redirect_uri()`, e.g. `https://mail.example.com/api/oauth/microsoft/
    callback`). Set `LENOVMAIL_PUBLIC_BASE_URL` to its final production value *before* registering
    this, since it has to match exactly.
-2. **API permissions** (Microsoft Graph, delegated): `offline_access`, `User.Read`,
-   `Mail.ReadWrite`, `Mail.Send` — these are the exact scopes requested by the client
-   (`SCOPES` in `providers/graph.py`). Grant admin consent if your tenant requires it for these
-   permissions.
-3. **Certificates & secrets** — create a client secret; its value (not the secret ID) is
-   `LENOVMAIL_MS_CLIENT_SECRET`.
+2. **API permissions** (Microsoft Graph, delegated): `User.Read`, `Mail.ReadWrite`, `Mail.Send`.
+   Grant admin consent if your tenant requires it. These are the permissions the registration
+   holds; the default `LENOVMAIL_MS_SCOPES` value asks for exactly that set at sign-in without
+   naming them (see [Scopes](#scopes-and-aadsts70000) below).
+3. **Certificates & secrets** — create a client secret if the registration is a confidential
+   client; its value (not the secret ID) is `LENOVMAIL_MS_CLIENT_SECRET`. A registration created
+   under **Mobile and desktop applications** has no secret, and none is needed.
 4. If you want to restrict connections to a single tenant rather than any Microsoft account,
    register the app as single-tenant and set `LENOVMAIL_MS_AUTHORITY` to
    `https://login.microsoftonline.com/<tenant-id>` instead of the `common` default.
+
+### Scopes and AADSTS70000
+
+`LENOVMAIL_MS_SCOPES` defaults to `https://graph.microsoft.com/.default`, which means "every
+delegated permission this registration already has consent for". That default exists because a
+granular list works at first sign-in but is rejected when the refresh token is redeemed, with
+`AADSTS70000: The provided value for the input parameter 'scope' is not valid`. The token then
+cannot be refreshed and the account lands in `auth_error`.
+
+Override it only if the registration must ask for a narrower set than it holds:
+
+```bash
+LENOVMAIL_MS_SCOPES="User.Read Mail.ReadWrite Mail.Send"
+```
+
+Commas and spaces both separate entries. `openid`, `profile` and `offline_access` are dropped if
+present (`Settings.ms_scope_list`): msal appends them itself and raises on them as input, so
+leaving one in the variable would break every OAuth start rather than widen the grant.
 
 ## Resource expectations
 
